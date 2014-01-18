@@ -54,6 +54,18 @@ public class RobotTemplate extends SimpleRobot {
         while(this.isOperatorControl() && this.isEnabled())
         {
             //motors.tankDrive(joy1, joy2);
+            
+            if(joy1.getRawButton(1))
+                pneumatic1.set(true);
+            else
+                pneumatic1.set(false);
+            
+            if(joy2.getRawButton(1))
+                pneumatic2.set(true);
+            else
+                pneumatic2.set(false);
+            
+            /*
             System.out.println("Set 1");
             pneumatic1.set(true);
             pneumatic2.set(false);
@@ -70,6 +82,7 @@ public class RobotTemplate extends SimpleRobot {
             pneumatic1.set(false);
             pneumatic2.set(false);
             Timer.delay(1);
+            */
         }
         
     }
