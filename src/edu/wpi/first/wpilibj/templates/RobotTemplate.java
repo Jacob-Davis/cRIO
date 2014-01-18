@@ -1,5 +1,9 @@
 /*
-    Test software, modify as needed.
+    SARCS (Semi-Automatic Robot Control System)
+    v0.1 'coolblock'
+    
+    This code is to be run on the cRIO.
+
     Copyright ©2014 Jeff Meli.
 
     This program is free software: you can redistribute it and/or modify
@@ -26,6 +30,8 @@ import edu.wpi.first.wpilibj.Timer;
 
 public class RobotTemplate extends SimpleRobot {
 
+    public final int FIRE_BUTTON = 1;
+    
     public final RobotDrive motors;
     public final Joystick joy1, joy2;
     public final Solenoid pneumatic1, pneumatic2;
@@ -37,13 +43,11 @@ public class RobotTemplate extends SimpleRobot {
         joy2 = new Joystick(2);
         pneumatic1 = new Solenoid(1);
         pneumatic2 = new Solenoid(2);
-        
-        
     }
     
     public void autonomous() 
     {
-        
+        System.out.println("Autonomous mode has no purpose currently; switch to manual operation.");
     }
 
     public void operatorControl() 
@@ -55,12 +59,12 @@ public class RobotTemplate extends SimpleRobot {
         {
             //motors.tankDrive(joy1, joy2);
             
-            if(joy1.getRawButton(1))
+            if(joy1.getRawButton(FIRE_BUTTON))
                 pneumatic1.set(true);
             else
                 pneumatic1.set(false);
             
-            if(joy2.getRawButton(1))
+            if(joy2.getRawButton(FIRE_BUTTON))
                 pneumatic2.set(true);
             else
                 pneumatic2.set(false);
@@ -89,6 +93,11 @@ public class RobotTemplate extends SimpleRobot {
 
     public void test() 
     {
-    
+        System.out.println("Test mode enabled. \n");
+        System.out.println(motors.getDescription() + ", " + motors.toString());
+        System.out.println(joy1.toString());
+        System.out.println(joy2.toString());
+        System.out.println(pneumatic1.toString());
+        System.out.println(pneumatic2.toString());
     }
 }
