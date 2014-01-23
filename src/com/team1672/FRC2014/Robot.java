@@ -19,7 +19,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package edu.wpi.first.wpilibj.templates;
+package com.team1672.FRC2014;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
@@ -28,7 +28,7 @@ import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
 
-public class RobotTemplate extends SimpleRobot {
+public class Robot extends SimpleRobot {
 
     public final int FIRE_BUTTON = 1;
     
@@ -36,13 +36,15 @@ public class RobotTemplate extends SimpleRobot {
     public final Joystick joy1, joy2;
     public final Solenoid pneumatic1, pneumatic2;
 
-    public RobotTemplate() 
+    public Robot() 
     {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
         joy1 = new Joystick(1);
         joy2 = new Joystick(2);
         pneumatic1 = new Solenoid(1);
         pneumatic2 = new Solenoid(2);
+        pneumatic1.set(false);
+        pneumatic2.set(false);
     }
     
     public void autonomous() 
@@ -57,18 +59,23 @@ public class RobotTemplate extends SimpleRobot {
         
         while(this.isOperatorControl() && this.isEnabled())
         {
-            //motors.tankDrive(joy1, joy2);
-            
+            motors.tankDrive(joy1, joy2);
             if(joy1.getRawButton(FIRE_BUTTON))
+            {
                 pneumatic1.set(true);
+            }
             else
+            {
                 pneumatic1.set(false);
-            
+            }
             if(joy2.getRawButton(FIRE_BUTTON))
+            {
                 pneumatic2.set(true);
+            }
             else
+            {
                 pneumatic2.set(false);
-            
+            }
             /*
             System.out.println("Set 1");
             pneumatic1.set(true);
