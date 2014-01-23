@@ -30,11 +30,16 @@ import edu.wpi.first.wpilibj.Timer;
 
 public class Robot extends SimpleRobot {
 
+    protected long ticks;
+    protected long timeOfFirstTick;
+    
     public final int FIRE_BUTTON = 1;
+    public final int TOGGLE_DRIVE_MODE_BUTTON = 2;
     
     public final RobotDrive motors;
     public final Joystick joy1, joy2;
     public final Solenoid pneumatic1, pneumatic2;
+    protected boolean tankDrive;
 
     public Robot() 
     {
@@ -45,6 +50,10 @@ public class Robot extends SimpleRobot {
         pneumatic2 = new Solenoid(2);
         pneumatic1.set(false);
         pneumatic2.set(false);
+        tankDrive = true;
+        
+        ticks = 1;
+        timeOfFirstTick = System.currentTimeMillis();
     }
     
     public void autonomous() 
@@ -54,12 +63,32 @@ public class Robot extends SimpleRobot {
 
     public void operatorControl() 
     {
-        System.out.println("Driver operation enabled.");
+        System.out.println("Driver operation enabled. Using tank drive mode.");
         motors.setSafetyEnabled(false);
+        long ticksBeforeToggleAgain = 0;
         
         while(this.isOperatorControl() && this.isEnabled())
         {
-            motors.tankDrive(joy1, joy2);
+            if(tankDrive)
+            {
+                motors.tankDrive(joy1, joy2);
+            }
+            else
+            {
+                motors.arcadeDrive(joy1);
+            }
+            
+            if(ticksBeforeToggleAgain > 0)
+            {
+                ticksBeforeToggleAgain--;
+            }
+            
+            if(joy1.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && ticksBeforeToggleAgain == 0)
+            {
+                tankDrive = !tankDrive;
+                ticksBeforeToggleAgain = 100;
+            }
+            
             if(joy1.getRawButton(FIRE_BUTTON))
             {
                 pneumatic1.set(true);
@@ -76,24 +105,9 @@ public class Robot extends SimpleRobot {
             {
                 pneumatic2.set(false);
             }
-            /*
-            System.out.println("Set 1");
-            pneumatic1.set(true);
-            pneumatic2.set(false);
-            Timer.delay(1);
-            System.out.println("Set 2");
-            pneumatic1.set(false);
-            pneumatic2.set(true);
-            Timer.delay(1);
-            System.out.println("Set 3");
-            pneumatic1.set(true);
-            pneumatic2.set(true);
-            Timer.delay(1);
-            System.out.println("Set 4");
-            pneumatic1.set(false);
-            pneumatic2.set(false);
-            Timer.delay(1);
-            */
+            
+            System.out.println("Current tick: " + ticks);
+            ticks++;
         }
         
     }
