@@ -87,7 +87,7 @@ public class Robot extends SimpleRobot {
             
             if(joy1.getRawButton(COMPRESSOR_BUTTON))
             {
-                compressor.set(Relay.Value.kOn);
+                compressor.set(Relay.Value.kForward);
             }
             else
             {
