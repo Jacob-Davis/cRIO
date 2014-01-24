@@ -40,7 +40,7 @@ public class Robot extends SimpleRobot {
     
     public final RobotDrive motors;
     public final Joystick joy1, joy2;
-    public final Solenoid pneumatic1, pneumatic2;
+    public final Solenoid pneumatic1;
     public final Relay compressor;
     protected boolean tankDrive;
 
@@ -50,9 +50,6 @@ public class Robot extends SimpleRobot {
         joy1 = new Joystick(1);
         joy2 = new Joystick(2);
         pneumatic1 = new Solenoid(2);
-        pneumatic1.set(false);
-        pneumatic2 = new Solenoid(4);
-        pneumatic2.set(false);
         
         compressor = new Relay(1);
         compressor.set(Relay.Value.kOff);
@@ -105,17 +102,10 @@ public class Robot extends SimpleRobot {
             {
                 pneumatic1.set(true);
             }
-            else if(joy2.getRawButton(FIRE_BUTTON))
-            {
-                pneumatic2.set(true);
-            }
             else
             {
                 pneumatic1.set(false);
-                pneumatic2.set(false);
             }
-            System.out.println(pneumatic1.get());
-            System.out.println(pneumatic2.get());
             
             if(ticks % 100 == 0)
             {
@@ -132,7 +122,6 @@ public class Robot extends SimpleRobot {
         System.out.println(joy1.toString());
         System.out.println(joy2.toString());
         System.out.println(pneumatic1.toString());
-        System.out.println(pneumatic2.toString());
     }
       
 }
