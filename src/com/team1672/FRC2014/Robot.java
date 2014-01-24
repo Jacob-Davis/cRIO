@@ -23,6 +23,7 @@ package com.team1672.FRC2014;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Solenoid;
@@ -35,10 +36,12 @@ public class Robot extends SimpleRobot {
     
     public final int FIRE_BUTTON = 1;
     public final int TOGGLE_DRIVE_MODE_BUTTON = 2;
+    public final int COMPRESSOR_BUTTON = 3;
     
     public final RobotDrive motors;
     public final Joystick joy1, joy2;
     public final Solenoid pneumatic1, pneumatic2;
+    public final Relay compressor;
     protected boolean tankDrive;
 
     public Robot() 
@@ -50,6 +53,9 @@ public class Robot extends SimpleRobot {
         pneumatic1.set(false);
         pneumatic2 = new Solenoid(4);
         pneumatic2.set(false);
+        
+        compressor = new Relay(1);
+        compressor.set(Relay.Value.kOff);
         
         tankDrive = true;
         
@@ -77,6 +83,15 @@ public class Robot extends SimpleRobot {
             else
             {
                 motors.arcadeDrive(joy1);
+            }
+            
+            if(joy1.getRawButton(COMPRESSOR_BUTTON))
+            {
+                compressor.set(Relay.Value.kOn);
+            }
+            else
+            {
+                compressor.set(Relay.Value.kOff);
             }
             
             
