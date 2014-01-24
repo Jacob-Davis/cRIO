@@ -25,23 +25,20 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SimpleRobot;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
 
 public class Robot extends SimpleRobot {
 
-//    protected long ticks;
-//    protected long timeOfFirstTick;
+    protected long ticks;
+    protected long timeOfFirstTick;
     
     public final int FIRE_BUTTON = 1;
     public final int TOGGLE_DRIVE_MODE_BUTTON = 2;
     
     public final RobotDrive motors;
     public final Joystick joy1, joy2;
-<<<<<<< HEAD
     public final Solenoid pneumatic1, pneumatic2;
-=======
-    public final DoubleSolenoid pneumatics;
->>>>>>> 2db34508d181b7cc624cb0b976094c6f990a1aa4
     protected boolean tankDrive;
 
     public Robot() 
@@ -49,18 +46,11 @@ public class Robot extends SimpleRobot {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
         joy1 = new Joystick(1);
         joy2 = new Joystick(2);
-<<<<<<< HEAD
-        pneumatic1 = new Solenoid(1, 2);
-        pneumatic2 = new Solenoid(2);
-        System.out.println("P1 Constructed... " + pneumatic1.get());
-        System.out.println("P2 Constructed... " + pneumatic2.get());
-        pneumatic1.set(DoubleSolenoid.Value.kOff);
+        pneumatic1 = new Solenoid(2);
+        pneumatic1.set(false);
+        pneumatic2 = new Solenoid(4);
         pneumatic2.set(false);
-=======
-        pneumatics = new DoubleSolenoid(1, 2);
-        System.out.println("Pneumatics enabled, should be off:" + pneumatics.get());
-        pneumatics.set(DoubleSolenoid.Value.kOff);
->>>>>>> 2db34508d181b7cc624cb0b976094c6f990a1aa4
+        
         tankDrive = true;
         
         ticks = 1;
@@ -76,7 +66,7 @@ public class Robot extends SimpleRobot {
     {
         System.out.println("Driver operation enabled. Using tank drive mode.");
         motors.setSafetyEnabled(false);
-//        long ticksBeforeToggleAgain = 0;
+        long lastToggle = 0;
         
         while(this.isOperatorControl() && this.isEnabled())
         {
@@ -89,26 +79,19 @@ public class Robot extends SimpleRobot {
                 motors.arcadeDrive(joy1);
             }
             
-//            if(ticksBeforeToggleAgain > 0)
-//            {
-//                ticksBeforeToggleAgain--;
-//            }
             
-            if(joy1.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) /*&& ticksBeforeToggleAgain == 0*/)
+            if(joy1.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
             {
                 tankDrive = !tankDrive;
-//                ticksBeforeToggleAgain = 100;
+                lastToggle = System.currentTimeMillis();
             }
             
             if(joy1.getRawButton(FIRE_BUTTON))
             {
-<<<<<<< HEAD
                 pneumatic1.set(true);
-            //    pneumatic2.set(true)    
             }
             else if(joy2.getRawButton(FIRE_BUTTON))
             {
-            //    pneumatic1.set(true);
                 pneumatic2.set(true);
             }
             else
@@ -118,38 +101,23 @@ public class Robot extends SimpleRobot {
             }
             System.out.println(pneumatic1.get());
             System.out.println(pneumatic2.get());
-=======
-                pneumatics.set(DoubleSolenoid.Value.kForward);
-            }
-            else if(joy2.getRawButton(FIRE_BUTTON))
-            {
-                pneumatics.set(DoubleSolenoid.Value.kOff);
-            }
-            else
-            {
-                pneumatics.set(DoubleSolenoid.Value.kReverse);
-            }
-            System.out.println(pneumatics.get());
->>>>>>> 2db34508d181b7cc624cb0b976094c6f990a1aa4
             
-//            if(ticks % 100 == 0)
-//                System.out.println("Current tick: " + ticks);
-//            ticks++;
+            if(ticks % 100 == 0)
+            {
+                // System.out.println("Current tick: " + ticks);
+            }
+            ticks++;
         }
-        
     }
-
+      
     public void test() 
     {
         System.out.println("Test mode enabled. \n");
         System.out.println(motors.getDescription() + ", " + motors.toString());
         System.out.println(joy1.toString());
         System.out.println(joy2.toString());
-<<<<<<< HEAD
         System.out.println(pneumatic1.toString());
         System.out.println(pneumatic2.toString());
-=======
-        System.out.println(pneumatics.toString());
->>>>>>> 2db34508d181b7cc624cb0b976094c6f990a1aa4
     }
+      
 }
