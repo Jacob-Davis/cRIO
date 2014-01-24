@@ -30,15 +30,15 @@ import edu.wpi.first.wpilibj.Timer;
 
 public class Robot extends SimpleRobot {
 
-    protected long ticks;
-    protected long timeOfFirstTick;
+//    protected long ticks;
+//    protected long timeOfFirstTick;
     
     public final int FIRE_BUTTON = 1;
     public final int TOGGLE_DRIVE_MODE_BUTTON = 2;
     
     public final RobotDrive motors;
     public final Joystick joy1, joy2;
-    public final DoubleSolenoid pneumatic1;
+    public final Solenoid pneumatic1, pneumatic2;
     protected boolean tankDrive;
 
     public Robot() 
@@ -46,12 +46,12 @@ public class Robot extends SimpleRobot {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
         joy1 = new Joystick(1);
         joy2 = new Joystick(2);
-        pneumatic1 = new DoubleSolenoid(1, 2);
-     //   pneumatic2 = new Solenoid(2);
+        pneumatic1 = new Solenoid(1, 2);
+        pneumatic2 = new Solenoid(2);
         System.out.println("P1 Constructed... " + pneumatic1.get());
-    //    System.out.println("P2 Constructed... " + pneumatic2.get());
+        System.out.println("P2 Constructed... " + pneumatic2.get());
         pneumatic1.set(DoubleSolenoid.Value.kOff);
-    //    pneumatic2.set(false);
+        pneumatic2.set(false);
         tankDrive = true;
         
         ticks = 1;
@@ -67,7 +67,7 @@ public class Robot extends SimpleRobot {
     {
         System.out.println("Driver operation enabled. Using tank drive mode.");
         motors.setSafetyEnabled(false);
-        long ticksBeforeToggleAgain = 0;
+//        long ticksBeforeToggleAgain = 0;
         
         while(this.isOperatorControl() && this.isEnabled())
         {
@@ -80,34 +80,38 @@ public class Robot extends SimpleRobot {
                 motors.arcadeDrive(joy1);
             }
             
-            if(ticksBeforeToggleAgain > 0)
-            {
-                ticksBeforeToggleAgain--;
-            }
+//            if(ticksBeforeToggleAgain > 0)
+//            {
+//                ticksBeforeToggleAgain--;
+//            }
             
-            if(joy1.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && ticksBeforeToggleAgain == 0)
+            if(joy1.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) /*&& ticksBeforeToggleAgain == 0*/)
             {
                 tankDrive = !tankDrive;
-                ticksBeforeToggleAgain = 100;
+//                ticksBeforeToggleAgain = 100;
             }
             
             if(joy1.getRawButton(FIRE_BUTTON))
             {
-                pneumatic1.set(DoubleSolenoid.Value.kForward);
+                pneumatic1.set(true);
+            //    pneumatic2.set(true)    
             }
             else if(joy2.getRawButton(FIRE_BUTTON))
             {
-                pneumatic1.set(DoubleSolenoid.Value.kOff);
+            //    pneumatic1.set(true);
+                pneumatic2.set(true);
             }
             else
             {
-                pneumatic1.set(DoubleSolenoid.Value.kReverse);
+                pneumatic1.set(false);
+                pneumatic2.set(false);
             }
             System.out.println(pneumatic1.get());
+            System.out.println(pneumatic2.get());
             
-            if(ticks % 100 == 0)
-                System.out.println("Current tick: " + ticks);
-            ticks++;
+//            if(ticks % 100 == 0)
+//                System.out.println("Current tick: " + ticks);
+//            ticks++;
         }
         
     }
@@ -119,5 +123,6 @@ public class Robot extends SimpleRobot {
         System.out.println(joy1.toString());
         System.out.println(joy2.toString());
         System.out.println(pneumatic1.toString());
+        System.out.println(pneumatic2.toString());
     }
 }
