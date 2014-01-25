@@ -39,8 +39,8 @@ public class Robot extends SimpleRobot {
     public final int COMPRESSOR_BUTTON = 3;
     
     public final RobotDrive motors;
-    public final Joystick right, left;
-    public final DoubleSolenoid pneumatic1;
+    public final Joystick leftStick, rightStick;
+    public final DoubleSolenoid pneumatic1, pneumatic2;
     public final Relay compressor;
     protected boolean tankDrive;
     protected boolean isCompressorOn;
@@ -48,10 +48,13 @@ public class Robot extends SimpleRobot {
     public Robot() 
     {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
-        right = new Joystick(1);
-        left = new Joystick(2);
+        leftStick = new Joystick(1);
+        rightStick = new Joystick(2);
         pneumatic1 = new DoubleSolenoid(1, 2);
         pneumatic1.set(DoubleSolenoid.Value.kOff);
+        
+        pneumatic2 = new DoubleSolenoid(3, 4);
+        pneumatic2.set(DoubleSolenoid.Value.kOff);
         
         compressor = new Relay(1);
         compressor.set(Relay.Value.kOff);
@@ -79,14 +82,14 @@ public class Robot extends SimpleRobot {
         {
             if(tankDrive)
             {
-                motors.tankDrive(right, left);
+                motors.tankDrive(leftStick, rightStick);
             }
             else
             {
-                motors.arcadeDrive(right);
+                motors.arcadeDrive(leftStick);
             }
             
-            if(right.getRawButton(COMPRESSOR_BUTTON) && System.currentTimeMillis() - lastTimeCompressorToggled > 250)
+            if(leftStick.getRawButton(COMPRESSOR_BUTTON) && System.currentTimeMillis() - lastTimeCompressorToggled > 250L)
             {
                 lastTimeCompressorToggled = System.currentTimeMillis();
                 if(isCompressorOn)
@@ -96,24 +99,29 @@ public class Robot extends SimpleRobot {
                 isCompressorOn = !isCompressorOn;
             }
 
-            if(right.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
+            if(rightStick.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
             {
                 tankDrive = !tankDrive;
                 lastToggle = System.currentTimeMillis();
             }
             
             //TOUCH ME AND I KILL YOU
-            if(right.getRawButton(FIRE_BUTTON))
+            if(rightStick.getRawButton(FIRE_BUTTON))
             {
                 pneumatic1.set(DoubleSolenoid.Value.kForward);
+                long buttonPressed = System.currentTimeMillis();
+                pneumatic2.set(DoubleSolenoid.Value.kForward);
+                System.out.println("Time between piston fires: " + (System.currentTimeMillis() - buttonPressed));
             }
-            else if(left.getRawButton(FIRE_BUTTON))
+            else if(leftStick.getRawButton(FIRE_BUTTON))
             {
                 pneumatic1.set(DoubleSolenoid.Value.kReverse);
+                pneumatic2.set(DoubleSolenoid.Value.kReverse);
             }
             else
             {
                 pneumatic1.set(DoubleSolenoid.Value.kOff);
+                pneumatic2.set(DoubleSolenoid.Value.kOff);
             }
             if(ticks % 100 == 0)
             {
@@ -127,8 +135,8 @@ public class Robot extends SimpleRobot {
     {
         System.out.println("Test mode enabled. \n");
         System.out.println(motors.getDescription() + ", " + motors.toString());
-        System.out.println(right.toString());
-        System.out.println(left.toString());
+        System.out.println(leftStick.toString());
+        System.out.println(rightStick.toString());
         System.out.println(pneumatic1.toString());
     }
       
