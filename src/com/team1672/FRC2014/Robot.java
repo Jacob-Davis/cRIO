@@ -40,7 +40,7 @@ public class Robot extends SimpleRobot {
     
     public final RobotDrive motors;
     public final Joystick joy1, joy2;
-    public final Solenoid pneumatic1;
+    public final DoubleSolenoid pneumatic1;
     public final Relay compressor;
     protected boolean tankDrive;
 
@@ -49,8 +49,8 @@ public class Robot extends SimpleRobot {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
         joy1 = new Joystick(1);
         joy2 = new Joystick(2);
-        pneumatic1 = new Solenoid(2);
-        pneumatic1.set(true);
+        pneumatic1 = new DoubleSolenoid(1, 2);
+        pneumatic1.set(DoubleSolenoid.Value.kOff);
         
         compressor = new Relay(1);
         compressor.set(Relay.Value.kOff);
@@ -101,11 +101,11 @@ public class Robot extends SimpleRobot {
             
             if(joy1.getRawButton(FIRE_BUTTON))
             {
-                pneumatic1.set(false);
+                pneumatic1.set(DoubleSolenoid.Value.kForward);
             }
             else
             {
-                pneumatic1.set(true);
+                pneumatic1.set(DoubleSolenoid.Value.kReverse);
             }
             
             if(ticks % 100 == 0)
