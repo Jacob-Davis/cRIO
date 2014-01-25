@@ -50,6 +50,7 @@ public class Robot extends SimpleRobot {
         joy1 = new Joystick(1);
         joy2 = new Joystick(2);
         pneumatic1 = new Solenoid(2);
+        pneumatic1.set(true);
         
         compressor = new Relay(1);
         compressor.set(Relay.Value.kOff);
@@ -100,11 +101,11 @@ public class Robot extends SimpleRobot {
             
             if(joy1.getRawButton(FIRE_BUTTON))
             {
-                pneumatic1.set(true);
+                pneumatic1.set(false);
             }
             else
             {
-                pneumatic1.set(false);
+                pneumatic1.set(true);
             }
             
             if(ticks % 100 == 0)
