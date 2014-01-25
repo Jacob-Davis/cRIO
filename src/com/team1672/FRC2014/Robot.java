@@ -91,7 +91,10 @@ public class Robot extends SimpleRobot {
             {
                 compressor.set(Relay.Value.kOff);
             }
-            
+            if(joy2.getRawButton(FIRE_BUTTON)
+            {
+                
+            }
             
             if(joy1.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
             {
@@ -103,9 +106,13 @@ public class Robot extends SimpleRobot {
             {
                 pneumatic1.set(DoubleSolenoid.Value.kForward);
             }
-            else
+            if else(joy2.getRawButton(FIRE_BUTTON))
             {
                 pneumatic1.set(DoubleSolenoid.Value.kReverse);
+            }
+            else
+            {
+                pneumatic1.set(DoubleSolenoid.Value.kOff);
             }
             
             if(ticks % 100 == 0)
