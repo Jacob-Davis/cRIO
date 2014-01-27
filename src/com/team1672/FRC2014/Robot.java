@@ -1,6 +1,6 @@
 /*
     SARCS (Semi-Automatic Robot Control System)
-    v0.2 'coolblock'
+    v0.3 'teleburger'
     
     This code is to be run on the cRIO.
 
@@ -13,14 +13,15 @@
 
     SARCS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with SARCS.  If not, see <http://www.gnu.org/licenses/>.
+    along with SARCS. If not, see <http://www.gnu.org/licenses/>.
 */
 package com.team1672.FRC2014;
 
+import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Relay;
@@ -32,38 +33,45 @@ import edu.wpi.first.wpilibj.Timer;
 public class Robot extends SimpleRobot {
 
     protected long ticks;
-    protected long timeOfFirstTick;
+    
+    public final long START_TIME;
     
     public final int FIRE_BUTTON = 1;
     public final int TOGGLE_DRIVE_MODE_BUTTON = 2;
     public final int COMPRESSOR_BUTTON = 3;
     
+    public final int LEFT_JOYSTICK_CHANNEL = 1;
+    public final int RIGHT_JOYSTICK_CHANNEL = 2;
+    
+    public final int COMPRESSOR_RELAY_PORT = 1;
+    public final int COMPRESSOR_SWITCH_PORT = 1;
+    
     public final RobotDrive motors;
     public final Joystick leftStick, rightStick;
     public final DoubleSolenoid pneumatic1, pneumatic2;
-    public final Relay compressor;
+    public final Compressor compressor;
     protected boolean tankDrive;
-    protected boolean isCompressorOn;
 
     public Robot() 
     {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
-        leftStick = new Joystick(1);
-        rightStick = new Joystick(2);
+        
+        leftStick = new Joystick(LEFT_JOYSTICK_CHANNEL);
+        rightStick = new Joystick(RIGHT_JOYSTICK_CHANNEL);
+        
         pneumatic1 = new DoubleSolenoid(1, 2);
         pneumatic1.set(DoubleSolenoid.Value.kOff);
         
         pneumatic2 = new DoubleSolenoid(3, 4);
         pneumatic2.set(DoubleSolenoid.Value.kOff);
         
-        compressor = new Relay(1);
-        compressor.set(Relay.Value.kOff);
-        isCompressorOn = false;
+        compressor = new Compressor(COMPRESSOR_SWITCH_PORT, COMPRESSOR_RELAY_PORT);
+        compressor.stop();
         
         tankDrive = true;
         
         ticks = 1;
-        timeOfFirstTick = System.currentTimeMillis();
+        START_TIME = System.currentTimeMillis();
     }
     
     public void autonomous() 
@@ -76,7 +84,6 @@ public class Robot extends SimpleRobot {
         System.out.println("Driver operation enabled. Using tank drive mode.");
         motors.setSafetyEnabled(false);
         long lastToggle = 0;
-        long lastTimeCompressorToggled = 0;
         
         while(this.isOperatorControl() && this.isEnabled())
         {
@@ -89,14 +96,13 @@ public class Robot extends SimpleRobot {
                 motors.arcadeDrive(leftStick);
             }
             
-            if(leftStick.getRawButton(COMPRESSOR_BUTTON) && System.currentTimeMillis() - lastTimeCompressorToggled > 250L)
+            if(!compressor.getPressureSwitchValue())
             {
-                lastTimeCompressorToggled = System.currentTimeMillis();
-                if(isCompressorOn)
-                    compressor.set(Relay.Value.kOff);
-                else
-                    compressor.set(Relay.Value.kForward);
-                isCompressorOn = !isCompressorOn;
+                compressor.start();
+            }
+            else
+            {
+                compressor.stop();
             }
 
             if(rightStick.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
@@ -123,9 +129,9 @@ public class Robot extends SimpleRobot {
                 pneumatic1.set(DoubleSolenoid.Value.kOff);
                 pneumatic2.set(DoubleSolenoid.Value.kOff);
             }
-            if(ticks % 100 == 0)
+            if(ticks % 1000 == 0)
             {
-                // System.out.println("Current tick: " + ticks);
+                System.out.println("Current tick: " + ticks);
             }
             ticks++;
         }
