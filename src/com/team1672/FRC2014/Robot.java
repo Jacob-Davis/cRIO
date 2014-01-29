@@ -21,6 +21,7 @@
 */
 package com.team1672.FRC2014;
 
+import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
@@ -46,10 +47,13 @@ public class Robot extends SimpleRobot {
     public final int COMPRESSOR_RELAY_PORT = 1;
     public final int COMPRESSOR_SWITCH_PORT = 1;
     
+    public final int ULTRASONIC_CHANNEL = 1;
+    
     public final RobotDrive motors;
     public final Joystick leftStick, rightStick;
     public final DoubleSolenoid pneumatic1, pneumatic2;
     public final Compressor compressor;
+    public final AnalogChannel ultrasonic1;
     protected boolean tankDrive;
 
     public Robot() 
@@ -67,6 +71,8 @@ public class Robot extends SimpleRobot {
         
         compressor = new Compressor(COMPRESSOR_SWITCH_PORT, COMPRESSOR_RELAY_PORT);
         compressor.stop();
+        
+        ultrasonic1 = new AnalogChannel(1);
         
         tankDrive = true;
         
@@ -87,6 +93,8 @@ public class Robot extends SimpleRobot {
         
         while(this.isOperatorControl() && this.isEnabled())
         {
+            System.out.println("Analog channel 1: " + ultrasonic1.getValue());
+            
             if(tankDrive)
             {
                 motors.tankDrive(leftStick, rightStick);
