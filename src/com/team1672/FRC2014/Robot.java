@@ -25,10 +25,8 @@ import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SimpleRobot;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
 
 public class Robot extends SimpleRobot {
@@ -119,7 +117,6 @@ public class Robot extends SimpleRobot {
                 lastToggle = System.currentTimeMillis();
             }
             
-            //TOUCH ME AND I KILL YOU
             if(rightStick.getRawButton(FIRE_BUTTON))
             {
                 pneumatic1.set(DoubleSolenoid.Value.kForward);
