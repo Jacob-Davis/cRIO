@@ -1,6 +1,6 @@
 /*
-    SARCS (Semi-Automatic Robot Control System)
-    v0.3 'teleburger'
+    SARCS - Semi-Automatic Robot Control System
+    v1.0 'hockeycap'
     
     This code is to be run on the cRIO.
 
@@ -24,6 +24,7 @@ package com.team1672.FRC2014;
 import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SimpleRobot;
@@ -36,8 +37,10 @@ public class Robot extends SimpleRobot {
     public final long START_TIME;
     
     public final int FIRE_BUTTON = 1;
-    public final int TOGGLE_DRIVE_MODE_BUTTON = 2;
-    public final int COMPRESSOR_BUTTON = 3;
+    public final int LIFT_UP_BUTTON = 3;
+    public final int LIFT_DOWN_BUTTON = 2;
+    public final int TOGGLE_DRIVE_MODE_BUTTON = 9;
+    public final int COMPRESSOR_BUTTON = 4;
     
     public final int LEFT_JOYSTICK_CHANNEL = 1;
     public final int RIGHT_JOYSTICK_CHANNEL = 2;
@@ -52,11 +55,15 @@ public class Robot extends SimpleRobot {
     public final DoubleSolenoid pneumatic1, pneumatic2;
     public final Compressor compressor;
     public final AnalogChannel ultrasonic1;
-    protected boolean tankDrive;
+    public final Jaguar lift;
+    
+    protected boolean isTankDrive;
 
     public Robot() 
     {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
+        lift = new Jaguar(5);
+        lift.set(0);
         
         leftStick = new Joystick(LEFT_JOYSTICK_CHANNEL);
         rightStick = new Joystick(RIGHT_JOYSTICK_CHANNEL);
@@ -72,7 +79,7 @@ public class Robot extends SimpleRobot {
         
         ultrasonic1 = new AnalogChannel(1);
         
-        tankDrive = true;
+        isTankDrive = true;
         
         ticks = 1;
         START_TIME = System.currentTimeMillis();
@@ -83,6 +90,9 @@ public class Robot extends SimpleRobot {
         System.out.println("Autonomous mode has no purpose currently; switch to manual operation.");
     }
 
+    /**
+     * Run once when 'enable' is clicked in the Driver Station and teleoperated is selected.
+     */
     public void operatorControl() 
     {
         System.out.println("Driver operation enabled. Using tank drive mode.");
@@ -91,9 +101,29 @@ public class Robot extends SimpleRobot {
         
         while(this.isOperatorControl() && this.isEnabled())
         {
-            System.out.println("Analog channel 1: " + ultrasonic1.getValue());
+            //Ratios are from 0 to 1, from bottom to top
+            double zRatioLeftStick = (leftStick.getZ() + 1D) / 2D;
+            double zRatioRightStick = (rightStick.getZ() + 1D) / 2D;
             
-            if(tankDrive)
+            //Lift speed is a double from 0 to 1 which indicates how fast the motor should spin.
+            double liftSpeed = (zRatioLeftStick + zRatioRightStick) / 2D;
+
+            
+            if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
+            {
+                lift.set(-liftSpeed);
+            }
+            else if(rightStick.getRawButton(LIFT_UP_BUTTON))
+            {
+                lift.set(liftSpeed);
+            }
+            else
+            {
+                lift.set(0);
+            }
+            
+            
+            if(isTankDrive)
             {
                 motors.tankDrive(leftStick, rightStick);
             }
@@ -101,6 +131,7 @@ public class Robot extends SimpleRobot {
             {
                 motors.arcadeDrive(leftStick);
             }
+            
             
             if(!compressor.getPressureSwitchValue())
             {
@@ -111,11 +142,13 @@ public class Robot extends SimpleRobot {
                 compressor.stop();
             }
 
+            
             if(rightStick.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
             {
-                tankDrive = !tankDrive;
+                isTankDrive = !isTankDrive;
                 lastToggle = System.currentTimeMillis();
             }
+            
             
             if(rightStick.getRawButton(FIRE_BUTTON))
             {
@@ -134,11 +167,15 @@ public class Robot extends SimpleRobot {
                 pneumatic1.set(DoubleSolenoid.Value.kOff);
                 pneumatic2.set(DoubleSolenoid.Value.kOff);
             }
-            if(ticks % 1000 == 0)
+            
+            
+            if(ticks % 100 == 0)
             {
                 System.out.println("Current tick: " + ticks);
+                System.out.println("Analog channel 1: " + ultrasonic1.getValue());
             }
             ticks++;
+            
         }
     }
       
