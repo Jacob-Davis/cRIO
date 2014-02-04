@@ -50,6 +50,8 @@ public class Robot extends SimpleRobot {
     
     public final int ULTRASONIC_CHANNEL = 1;
     
+    public final double LIFT_SPEED = 0.07;
+    
     public final RobotDrive motors;
     public final Joystick leftStick, rightStick;
     public final DoubleSolenoid pneumatic1, pneumatic2;
@@ -63,7 +65,6 @@ public class Robot extends SimpleRobot {
     {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
         lift = new Jaguar(5);
-        lift.set(0);
         
         leftStick = new Joystick(LEFT_JOYSTICK_CHANNEL);
         rightStick = new Joystick(RIGHT_JOYSTICK_CHANNEL);
@@ -97,31 +98,27 @@ public class Robot extends SimpleRobot {
     {
         System.out.println("Driver operation enabled. Using tank drive mode.");
         motors.setSafetyEnabled(false);
+        lift.setSafetyEnabled(false);
         long lastToggle = 0;
         
         while(this.isOperatorControl() && this.isEnabled())
         {
-            //Ratios are from 0 to 1, from bottom to top
-            double zRatioLeftStick = (leftStick.getZ() + 1D) / 2D;
-            double zRatioRightStick = (rightStick.getZ() + 1D) / 2D;
-            
-            //Lift speed is a double from 0 to 1 which indicates how fast the motor should spin.
-            double liftSpeed = (zRatioLeftStick + zRatioRightStick) / 2D;
-
             
             if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
             {
-                lift.set(-liftSpeed);
+                System.out.println("ONE");
+                lift.set(-LIFT_SPEED);
             }
             else if(rightStick.getRawButton(LIFT_UP_BUTTON))
             {
-                lift.set(liftSpeed);
+                System.out.println("TWO");
+                lift.set(LIFT_SPEED);
             }
             else
             {
                 lift.set(0);
             }
-            
+
             
             if(isTankDrive)
             {
