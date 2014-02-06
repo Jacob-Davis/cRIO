@@ -50,7 +50,8 @@ public class Robot extends SimpleRobot {
     
     public final int ULTRASONIC_CHANNEL = 1;
     
-    public final double LIFT_SPEED = 0.07;
+    //Slow speed is 0.07
+    public double liftSpeed;
     
     public final RobotDrive motors;
     public final Joystick leftStick, rightStick;
@@ -103,16 +104,18 @@ public class Robot extends SimpleRobot {
         
         while(this.isOperatorControl() && this.isEnabled())
         {
+            //Z axis goes from 1 to -1, bottom to top.
+            liftSpeed = 1 - ((leftStick.getZ() + 1) / 2);
             
             if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
             {
                 System.out.println("ONE");
-                lift.set(-LIFT_SPEED);
+                lift.set(-liftSpeed);
             }
             else if(rightStick.getRawButton(LIFT_UP_BUTTON))
             {
                 System.out.println("TWO");
-                lift.set(LIFT_SPEED);
+                lift.set(liftSpeed);
             }
             else
             {
