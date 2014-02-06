@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.Servo;
 
 public class Robot extends SimpleRobot {
 
@@ -39,6 +40,8 @@ public class Robot extends SimpleRobot {
     public final int FIRE_BUTTON = 1;
     public final int LIFT_UP_BUTTON = 3;
     public final int LIFT_DOWN_BUTTON = 2;
+    public final int CAMERA_UP = 3;
+    public final int CAMERA_DOWN = 2;
     public final int TOGGLE_DRIVE_MODE_BUTTON = 9;
     public final int COMPRESSOR_BUTTON = 4;
     
@@ -52,6 +55,7 @@ public class Robot extends SimpleRobot {
     
     //Slow speed is 0.07
     public double liftSpeed;
+    public double camAngle;
     
     public final RobotDrive motors;
     public final Joystick leftStick, rightStick;
@@ -59,6 +63,7 @@ public class Robot extends SimpleRobot {
     public final Compressor compressor;
     public final AnalogChannel ultrasonic1;
     public final Jaguar lift;
+    public final Servo cam;
     
     protected boolean isTankDrive;
 
@@ -66,6 +71,7 @@ public class Robot extends SimpleRobot {
     {
         motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
         lift = new Jaguar(5);
+        cam = new Servo(6);
         
         leftStick = new Joystick(LEFT_JOYSTICK_CHANNEL);
         rightStick = new Joystick(RIGHT_JOYSTICK_CHANNEL);
@@ -79,6 +85,9 @@ public class Robot extends SimpleRobot {
         compressor = new Compressor(COMPRESSOR_SWITCH_PORT, COMPRESSOR_RELAY_PORT);
         compressor.stop();
         
+		camAngle = 0.0;
+		cam.set(0.50);
+		
         ultrasonic1 = new AnalogChannel(1);
         
         isTankDrive = true;
@@ -107,7 +116,6 @@ public class Robot extends SimpleRobot {
             //Z axis goes from 1 to -1, bottom to top.
             liftSpeed = 1 - ((leftStick.getZ() + 1) / 2);
             
-            
             if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
             {
                 lift.set(-liftSpeed);
@@ -123,10 +131,20 @@ public class Robot extends SimpleRobot {
                 lift.set(0);
             }
 
-            
+            if(leftStick.getRawButton(CAMERA_UP))
+            {
+				camAngle += 0.05;
+				cam.set(camAngle);
+            }
+			else if(leftStick.getRawButton(CAMERA_DOWN))
+			{
+				camAngle -= 0.05;
+				cam.set(camAngle);
+			}
+
             if(isTankDrive)
             {
-                motors.tankDrive(leftStick, rightStick);
+00                motors.tankDrive(leftStick, rightStick);
             }
             else
             {
