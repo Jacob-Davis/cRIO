@@ -114,7 +114,11 @@ public class Robot extends SimpleRobot {
         while(this.isOperatorControl() && this.isEnabled())
         {
             //Z axis goes from 1 to -1, bottom to top.
-            liftSpeed = 1 - ((leftStick.getZ() + 1) / 2);
+            double stickZLeft = 1 - ((leftStick.getZ() + 1) / 2);
+			double stickZRight = 1 - ((rightStick.getZ() + 1) / 2);
+			liftSpeed = (stickZLeft + stickZRight) / 2;
+			
+			System.out.println("Pneumatic switch: " + compressor.getPressureSwitchValue());
             
             if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
             {
@@ -144,7 +148,7 @@ public class Robot extends SimpleRobot {
 
             if(isTankDrive)
             {
-00                motors.tankDrive(leftStick, rightStick);
+				motors.tankDrive(leftStick, rightStick);
             }
             else
             {
