@@ -107,15 +107,16 @@ public class Robot extends SimpleRobot {
             //Z axis goes from 1 to -1, bottom to top.
             liftSpeed = 1 - ((leftStick.getZ() + 1) / 2);
             
+            
             if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
             {
-                System.out.println("ONE");
                 lift.set(-liftSpeed);
+                System.out.println("Current velocity: " + (-liftSpeed));
             }
             else if(rightStick.getRawButton(LIFT_UP_BUTTON))
             {
-                System.out.println("TWO");
                 lift.set(liftSpeed);
+                System.out.println("Current velocity: " + liftSpeed);
             }
             else
             {
