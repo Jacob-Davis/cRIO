@@ -23,9 +23,11 @@ package com.team1672.FRC2014;
 
 import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -49,7 +51,7 @@ public class Robot extends SimpleRobot {
     public final int RIGHT_JOYSTICK_CHANNEL = 2;
     
     public final int COMPRESSOR_RELAY_PORT = 1;
-    public final int COMPRESSOR_SWITCH_PORT = 1;
+    public final int COMPRESSOR_SWITCH_PORT = 13;
     
     public final int ULTRASONIC_CHANNEL = 1;
     
@@ -60,10 +62,14 @@ public class Robot extends SimpleRobot {
     public final RobotDrive motors;
     public final Joystick leftStick, rightStick;
     public final DoubleSolenoid pneumatic1, pneumatic2;
-    public final Compressor compressor;
+    
     public final AnalogChannel ultrasonic1;
     public final Jaguar lift;
     public final Servo cam;
+    
+    //public final Compressor compressor;
+    public final Relay compressor;
+	public final DigitalInput compressorSwitch;
     
     protected boolean isTankDrive;
 
@@ -82,10 +88,14 @@ public class Robot extends SimpleRobot {
         pneumatic2 = new DoubleSolenoid(3, 4);
         pneumatic2.set(DoubleSolenoid.Value.kOff);
         
-        compressor = new Compressor(COMPRESSOR_SWITCH_PORT, COMPRESSOR_RELAY_PORT);
-        compressor.stop();
+        //compressor = new Compressor(COMPRESSOR_SWITCH_PORT, COMPRESSOR_RELAY_PORT);
+        //compressor.stop();
         
-		camAngle = 0.0;
+        compressor = new Relay(COMPRESSOR_RELAY_PORT);
+        compressor.set(Relay.Value.kOff);
+		compressorSwitch = new DigitalInput(COMPRESSOR_SWITCH_PORT);
+        
+        camAngle = 0.0;
 		cam.set(0.50);
 		
         ultrasonic1 = new AnalogChannel(1);
@@ -110,7 +120,10 @@ public class Robot extends SimpleRobot {
         motors.setSafetyEnabled(false);
         lift.setSafetyEnabled(false);
         long lastToggle = 0;
-        
+        motors.setInvertedMotor(RobotDrive.MotorType.kFrontLeft, true);
+        motors.setInvertedMotor(RobotDrive.MotorType.kFrontRight, true);
+        motors.setInvertedMotor(RobotDrive.MotorType.kRearLeft, true);
+        motors.setInvertedMotor(RobotDrive.MotorType.kRearRight, true);
         while(this.isOperatorControl() && this.isEnabled())
         {
             //Z axis goes from 1 to -1, bottom to top.
@@ -118,7 +131,7 @@ public class Robot extends SimpleRobot {
 			double stickZRight = 1 - ((rightStick.getZ() + 1) / 2);
 			liftSpeed = (stickZLeft + stickZRight) / 2;
 			
-			System.out.println("Pneumatic switch: " + compressor.getPressureSwitchValue());
+			System.out.println("Pneumatic switch: " + compressorSwitch.get());
             
             if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
             {
@@ -148,14 +161,14 @@ public class Robot extends SimpleRobot {
 
             if(isTankDrive)
             {
-				motors.tankDrive(leftStick, rightStick);
+                motors.tankDrive(leftStick, rightStick);
             }
             else
             {
                 motors.arcadeDrive(leftStick);
             }
             
-            
+            /*
             if(!compressor.getPressureSwitchValue())
             {
                 compressor.start();
@@ -164,6 +177,16 @@ public class Robot extends SimpleRobot {
             {
                 compressor.stop();
             }
+			*/
+			
+			if(leftStick.getRawButton(11) || rightStick.getRawButton(11))
+			{
+				compressor.set(Relay.Value.kForward);
+			}
+			else
+			{
+				compressor.set(Relay.Value.kOff);
+			}
 
             
             if(rightStick.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
