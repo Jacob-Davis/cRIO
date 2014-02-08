@@ -1,10 +1,10 @@
 /*
     SARCS - Semi-Automatic Robot Control System
-    v1.0 'hockeycap'
-    
+    v1.1 'junefire'
+
     This code is to be run on the cRIO.
 
-    Copyright ©2014 Jeff Meli, Tommy Bohde.
+    Copyright ©2014 Tommy Bohde, Jeff Meli, and Ian Rahimi.
 
     SARCS is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,215 +23,175 @@ package com.team1672.FRC2014;
 
 import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.Servo;
 
 public class Robot extends SimpleRobot {
 
-    protected long ticks;
-    
-    public final long START_TIME;
-    
-    public final int FIRE_BUTTON = 1;
-    public final int LIFT_UP_BUTTON = 3;
-    public final int LIFT_DOWN_BUTTON = 2;
-    public final int CAMERA_UP = 3;
-    public final int CAMERA_DOWN = 2;
-    public final int TOGGLE_DRIVE_MODE_BUTTON = 9;
-    public final int COMPRESSOR_BUTTON = 4;
-    
-    public final int LEFT_JOYSTICK_CHANNEL = 1;
-    public final int RIGHT_JOYSTICK_CHANNEL = 2;
-    
-    public final int COMPRESSOR_RELAY_PORT = 1;
-    public final int COMPRESSOR_SWITCH_PORT = 13;
-    
-    public final int ULTRASONIC_CHANNEL = 1;
-    
-    //Slow speed is 0.07
-    public double liftSpeed;
-    public double camAngle;
-    
-    public final RobotDrive motors;
-    public final Joystick leftStick, rightStick;
-    public final DoubleSolenoid pneumatic1, pneumatic2;
-    
-    public final AnalogChannel ultrasonic1;
-    public final Jaguar lift;
-    public final Servo cam;
-    
-    //public final Compressor compressor;
-    public final Relay compressor;
-	public final DigitalInput compressorSwitch;
-    
-    protected boolean isTankDrive;
+  protected long ticks;
 
-    public Robot() 
-    {
-        motors = new RobotDrive(1, 2, 3, 4); //4 Jaguars connected to PWM ports 1-4
-        lift = new Jaguar(5);
-        cam = new Servo(6);
-        
-        leftStick = new Joystick(LEFT_JOYSTICK_CHANNEL);
-        rightStick = new Joystick(RIGHT_JOYSTICK_CHANNEL);
-        
-        pneumatic1 = new DoubleSolenoid(1, 2);
-        pneumatic1.set(DoubleSolenoid.Value.kOff);
-        
-        pneumatic2 = new DoubleSolenoid(3, 4);
-        pneumatic2.set(DoubleSolenoid.Value.kOff);
-        
-        //compressor = new Compressor(COMPRESSOR_SWITCH_PORT, COMPRESSOR_RELAY_PORT);
-        //compressor.stop();
-        
-        compressor = new Relay(COMPRESSOR_RELAY_PORT);
-        compressor.set(Relay.Value.kOff);
-		compressorSwitch = new DigitalInput(COMPRESSOR_SWITCH_PORT);
-        
-        camAngle = 0.0;
-		cam.set(0.50);
-		
-        ultrasonic1 = new AnalogChannel(1);
-        
-        isTankDrive = true;
-        
-        ticks = 1;
-        START_TIME = System.currentTimeMillis();
+  /* Buttons */
+  public final int FIRE_BUTTON = 1;
+  public final int LIFT_UP_BUTTON = 3;
+  public final int LIFT_DOWN_BUTTON = 2;
+  public final int CAMERA_UP = 3;
+  public final int CAMERA_DOWN = 2;
+  public final int COMPRESSOR_BUTTON = 4;
+
+  /* Joystick USB Ports */ /* XXX: This may vary on different computers at different times */
+  public final int kLeftJoystick = 1;
+  public final int kRightJoystick = 2;
+
+  public Joystick leftStick, rightStick;
+
+  /* PWM Channels controlling motors */
+  public final int[] kDrivetrain = {1, 2, 3, 4};
+  public final int kLift = 5;
+  public final int kCameraServo = 6; /* XXX: Remember to put a jumper next to this PWM channel */
+
+  public RobotDrive drivetrain;
+  public Jaguar lift;
+  public Servo cameraServo;
+  public double cameraAngle;
+
+  /* Relays (off of Digital Sidecar) */
+  public final int kCompressor = 1;
+
+  public Compressor compressor;
+
+  /* Digital IO (off of Digital Sidecar) */
+  public final int kPressureSwitch = 1;
+
+  /* Analog IO (off of cRIO module) */
+  public final int kUltrasonic = 1;
+
+  public AnalogChannel ultrasonic;
+
+  /* Solenoids (off of the cRIO NI 9472 module (the one with the LEDs on top)) */
+  public final int[] kLeftSolenoid = {1, 2};
+  public final int[] kRightSolenoid = {3, 4};
+
+  public DoubleSolenoid leftSolenoid, rightSolenoid;
+
+  public Robot() {
+      ticks = 1;
+
+      leftStick = new Joystick(kLeftJoystick);
+      rightStick = new Joystick(kRightJoystick);
+
+      drivetrain = new RobotDrive(kDrivetrain[0],
+                                  kDrivetrain[1],
+                                  kDrivetrain[2],
+                                  kDrivetrain[3]);
+      lift = new Jaguar(kLift);
+      cameraServo = new Servo(kCameraServo);
+
+
+      leftSolenoid = new DoubleSolenoid(kLeftSolenoid[0], kLeftSolenoid[1]);
+      leftSolenoid.set(DoubleSolenoid.Value.kOff);
+
+      rightSolenoid = new DoubleSolenoid(kRightSolenoid[0], kRightSolenoid[1]);
+      rightSolenoid.set(DoubleSolenoid.Value.kOff);
+
+      compressor = new Compressor(kPressureSwitch, kCompressor);
+      compressor.stop();
+
+      cameraAngle = 0.0;
+      cameraServo.set(0.50);
+
+      ultrasonic = new AnalogChannel(1);
+  }
+
+  public void autonomous() {
+    /* TODO: Implement autonomous. */
+    System.out.println("Autonomous mode has no purpose currently; switch to manual operation.");
+  }
+
+  public void operatorControl() {
+    System.out.println("Driver operation enabled.");
+    drivetrain.setSafetyEnabled(false);
+    lift.setSafetyEnabled(false);
+
+    while(this.isOperatorControl() && this.isEnabled()) {
+      drivetrain.tankDrive(leftStick, rightStick);
+
+      /* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
+       * it has a value on the interval [-1, 1],
+	   * where -1 is physically located at the top of the lever (near the positive sign)
+	   * and 1 is at the bottom of the lever (near the negative sign)
+       */
+
+      double stickZLeft = 1 - ((leftStick.getZ() + 1) / 2);
+      double stickZRight = 1 - ((rightStick.getZ() + 1) / 2);
+      double liftSpeed = (stickZLeft + stickZRight) / 2;
+
+      if(rightStick.getRawButton(LIFT_DOWN_BUTTON)) {
+        lift.set(-liftSpeed);
+      } else if(rightStick.getRawButton(LIFT_UP_BUTTON)) {
+        lift.set(liftSpeed);
+      } else {
+        lift.set(0);
+      }
+
+      /* Compressor */
+      System.out.println("Pneumatic switch: " + compressor.getPressureSwitchValue());
+
+      if(!compressor.getPressureSwitchValue()) {
+        compressor.start();
+      } else {
+        compressor.stop();
+      }
+
+      /* Solenoids */
+      if(rightStick.getRawButton(FIRE_BUTTON)) {
+        leftSolenoid.set(DoubleSolenoid.Value.kForward);
+        rightSolenoid.set(DoubleSolenoid.Value.kForward);
+      } else if(leftStick.getRawButton(FIRE_BUTTON)) {
+        leftSolenoid.set(DoubleSolenoid.Value.kReverse);
+        rightSolenoid.set(DoubleSolenoid.Value.kReverse);
+      } else {
+        leftSolenoid.set(DoubleSolenoid.Value.kOff);
+        rightSolenoid.set(DoubleSolenoid.Value.kOff);
+      }
+
+      /* Camera controls */
+      if(leftStick.getRawButton(CAMERA_UP)) {
+        cameraAngle += 0.05;
+        cameraServo.set(cameraAngle);
+      } else if(leftStick.getRawButton(CAMERA_DOWN)) {
+        cameraAngle -= 0.05;
+        cameraServo.set(cameraAngle);
+      }
+
+      /* Periodic diagnostic messages */
+      if(ticks % 100 == 0) {
+        System.out.println("Current tick: " + ticks);
+        System.out.println("Analog channel 1: " + ultrasonic.getValue());
+      }
+      ticks++;
     }
-    
-    public void autonomous() 
-    {
-        System.out.println("Autonomous mode has no purpose currently; switch to manual operation.");
+  }
+
+  public void test() {
+    System.out.println("Test mode enabled. \n");
+    System.out.println(drivetrain.getDescription() + ", " + drivetrain.toString());
+    System.out.println(leftStick.toString());
+    System.out.println(rightStick.toString());
+    System.out.println(leftSolenoid.toString());
+  }
+
+  public void disabled() {
+    while (!this.isEnabled()) {
+      if(!compressor.getPressureSwitchValue()) {
+        compressor.start();
+      } else {
+        compressor.stop();
+      }
     }
-
-    /**
-     * Run once when 'enable' is clicked in the Driver Station and teleoperated is selected.
-     */
-    public void operatorControl() 
-    {
-        System.out.println("Driver operation enabled. Using tank drive mode.");
-        motors.setSafetyEnabled(false);
-        lift.setSafetyEnabled(false);
-        long lastToggle = 0;
-        motors.setInvertedMotor(RobotDrive.MotorType.kFrontLeft, true);
-        motors.setInvertedMotor(RobotDrive.MotorType.kFrontRight, true);
-        motors.setInvertedMotor(RobotDrive.MotorType.kRearLeft, true);
-        motors.setInvertedMotor(RobotDrive.MotorType.kRearRight, true);
-        while(this.isOperatorControl() && this.isEnabled())
-        {
-            //Z axis goes from 1 to -1, bottom to top.
-            double stickZLeft = 1 - ((leftStick.getZ() + 1) / 2);
-			double stickZRight = 1 - ((rightStick.getZ() + 1) / 2);
-			liftSpeed = (stickZLeft + stickZRight) / 2;
-			
-			System.out.println("Pneumatic switch: " + compressorSwitch.get());
-            
-            if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
-            {
-                lift.set(-liftSpeed);
-                System.out.println("Current velocity: " + (-liftSpeed));
-            }
-            else if(rightStick.getRawButton(LIFT_UP_BUTTON))
-            {
-                lift.set(liftSpeed);
-                System.out.println("Current velocity: " + liftSpeed);
-            }
-            else
-            {
-                lift.set(0);
-            }
-
-            if(leftStick.getRawButton(CAMERA_UP))
-            {
-				camAngle += 0.05;
-				cam.set(camAngle);
-            }
-			else if(leftStick.getRawButton(CAMERA_DOWN))
-			{
-				camAngle -= 0.05;
-				cam.set(camAngle);
-			}
-
-            if(isTankDrive)
-            {
-                motors.tankDrive(leftStick, rightStick);
-            }
-            else
-            {
-                motors.arcadeDrive(leftStick);
-            }
-            
-            /*
-            if(!compressor.getPressureSwitchValue())
-            {
-                compressor.start();
-            }
-            else
-            {
-                compressor.stop();
-            }
-			*/
-			
-			if(leftStick.getRawButton(11) || rightStick.getRawButton(11))
-			{
-				compressor.set(Relay.Value.kForward);
-			}
-			else
-			{
-				compressor.set(Relay.Value.kOff);
-			}
-
-            
-            if(rightStick.getRawButton(TOGGLE_DRIVE_MODE_BUTTON) && System.currentTimeMillis() - lastToggle > 500L)
-            {
-                isTankDrive = !isTankDrive;
-                lastToggle = System.currentTimeMillis();
-            }
-            
-            
-            if(rightStick.getRawButton(FIRE_BUTTON))
-            {
-                pneumatic1.set(DoubleSolenoid.Value.kForward);
-                long buttonPressed = System.currentTimeMillis();
-                pneumatic2.set(DoubleSolenoid.Value.kForward);
-                System.out.println("Time between piston fires: " + (System.currentTimeMillis() - buttonPressed));
-            }
-            else if(leftStick.getRawButton(FIRE_BUTTON))
-            {
-                pneumatic1.set(DoubleSolenoid.Value.kReverse);
-                pneumatic2.set(DoubleSolenoid.Value.kReverse);
-            }
-            else
-            {
-                pneumatic1.set(DoubleSolenoid.Value.kOff);
-                pneumatic2.set(DoubleSolenoid.Value.kOff);
-            }
-            
-            
-            if(ticks % 100 == 0)
-            {
-                System.out.println("Current tick: " + ticks);
-                System.out.println("Analog channel 1: " + ultrasonic1.getValue());
-            }
-            ticks++;
-            
-        }
-    }
-      
-    public void test() 
-    {
-        System.out.println("Test mode enabled. \n");
-        System.out.println(motors.getDescription() + ", " + motors.toString());
-        System.out.println(leftStick.toString());
-        System.out.println(rightStick.toString());
-        System.out.println(pneumatic1.toString());
-    }
-      
+  }
 }
