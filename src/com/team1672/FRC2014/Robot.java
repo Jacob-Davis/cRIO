@@ -22,6 +22,9 @@
 
 package com.team1672.FRC2014;
 
+/**
+ * Gets the goodies.
+ */
 import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -43,7 +46,8 @@ public class Robot extends SimpleRobot
   public final int LIFT_UP_BUTTON = 2;
   public final int LIFT_DOWN_BUTTON = 3;
   public final int CAMERA_TOGGLE = 3;
-  public final int COMPRESSOR_BUTTON = 4;
+  public final int COMPRESSOR_BUTTON = 5;
+	public final int SPEED_SENSITIVITY_TOGGLE = 11;
 
   /* Joystick USB Ports */ /* XXX: This may vary on different computers at different times */
   public final int kLeftJoystick = 1;
@@ -61,12 +65,6 @@ public class Robot extends SimpleRobot
 																								RobotDrive.MotorType.kRearRight};
 
   public final double[] cameraAngle = {0.7, 0.85};
-  
-  public RobotDrive drivetrain;
-  public Jaguar lift;
-  public Servo cameraServo;
-	public Compressor compressor;
-  public AnalogChannel ultrasonic;
 	
 	/* Relays (off of Digital Sidecar) */
   public final int kCompressor = 1;
@@ -80,15 +78,22 @@ public class Robot extends SimpleRobot
   /* Solenoids (off of the cRIO NI 9472 module (the one with the LEDs on top)) */
   public final int[] kLeftSolenoid = {1, 2};
   public final int[] kRightSolenoid = {3, 4};
+	
+	private RobotDrive drivetrain;
+  private Jaguar lift;
+  private Servo cameraServo;
+	private Compressor compressor;
+  private AnalogChannel ultrasonic;
+  private DoubleSolenoid leftSolenoid, rightSolenoid;
 
-  public DoubleSolenoid leftSolenoid, rightSolenoid;
-  
-  //Temporary
-  public final DigitalInput pressureSwitch;
-  public long lastSwitchTime;
-  public long lastReverseTime;
-  public boolean isCompressorOn;
-  public boolean isInverted;
+  private final DigitalInput pressureSwitch;
+  private long lastSwitchTime;
+  private long lastReverseTime;
+	private long lastSSTime;
+  private boolean isCompressorOn;
+  private boolean isInverted;
+	private boolean isCameraUp;
+	private boolean isSensitiveAtSlowSpeeds;
   
   public Robot()
 	{
@@ -97,6 +102,7 @@ public class Robot extends SimpleRobot
 	  lastReverseTime = 0;
 	  isCompressorOn = false;
 	  isInverted = true;
+		isSensitiveAtSlowSpeeds = false;
     ticks = 1;
 
     leftStick = new Joystick(kLeftJoystick);
@@ -112,15 +118,18 @@ public class Robot extends SimpleRobot
 			drivetrain.setInvertedMotor(motors[i], isInverted);
 	  
     lift = new Jaguar(kLift);
+		
     cameraServo = new Servo(kCameraServo);
-
+    cameraServo.set(cameraAngle[1]);
+		isCameraUp = true;
+		
     leftSolenoid = new DoubleSolenoid(kLeftSolenoid[0], kLeftSolenoid[1]);
     leftSolenoid.set(DoubleSolenoid.Value.kOff);
     rightSolenoid = new DoubleSolenoid(kRightSolenoid[0], kRightSolenoid[1]);
     rightSolenoid.set(DoubleSolenoid.Value.kOff);
 
     compressor = new Compressor(2, 13, 2, 1);
-    cameraServo.set(0.7);
+
     ultrasonic = new AnalogChannel(1);
 	}
 
@@ -138,7 +147,7 @@ public class Robot extends SimpleRobot
 	
 		while(this.isOperatorControl() && this.isEnabled()) 
 		{
-			drivetrain.tankDrive(leftStick, rightStick);
+			drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
      
 		/* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
      * it has a value on the interval [-1, 1],
@@ -160,20 +169,12 @@ public class Robot extends SimpleRobot
 			System.out.println("Pneumatic switch: " + pressureSwitch.get());
 			System.out.println("Compressor: " + isCompressorOn);
 	  
-		  if((leftStick.getRawButton(5) || rightStick.getRawButton(5)) && (System.currentTimeMillis() - lastSwitchTime) >= 250)
+		  if((leftStick.getRawButton(COMPRESSOR_BUTTON) || rightStick.getRawButton(COMPRESSOR_BUTTON)) && (System.currentTimeMillis() - lastSwitchTime) >= 250)
 		  {
 			  lastSwitchTime = System.currentTimeMillis();
 				isCompressorOn = !isCompressorOn;
 		  }
-		  if(rightStick.getRawButton(11) && (System.currentTimeMillis() - lastReverseTime) >= 250)
-			{
-			  lastReverseTime = System.currentTimeMillis();
-			  isInverted = !isInverted;
-			  drivetrain.setInvertedMotor(RobotDrive.MotorType.kFrontLeft, isInverted);
-				drivetrain.setInvertedMotor(RobotDrive.MotorType.kFrontRight, isInverted);
-			  drivetrain.setInvertedMotor(RobotDrive.MotorType.kRearLeft, isInverted);
-			  drivetrain.setInvertedMotor(RobotDrive.MotorType.kRearRight, isInverted);
-			}
+			
 		  if(isCompressorOn)
 			  compressor.setRelayValue(Relay.Value.kForward);
 			else
@@ -201,21 +202,13 @@ public class Robot extends SimpleRobot
 	      rightSolenoid.set(DoubleSolenoid.Value.kOff);
 			}
 		
-			/* Camera controls */
-//			if(leftStick.getRawButton(CAMERA_UP)) 
-//			{
-//				if(cameraAngle < 0.7)
-//					cameraAngle += 0.1;
-//				cameraServo.set(cameraAngle);
-//				System.out.println(cameraAngle);
-//	    }	
-//			else if(leftStick.getRawButton(CAMERA_DOWN)) 
-//			{
-//				if (cameraAngle > -0.7)
-//					cameraAngle -= 0.1;
-//		    cameraServo.set(cameraAngle);
-//				System.out.println(cameraAngle);
-//			}
+			/* Camera up/down toggle */
+			if(leftStick.getRawButton(CAMERA_TOGGLE)) 
+				toggleCameraAngle();
+		  if(rightStick.getRawButton(11) && (System.currentTimeMillis() - lastReverseTime) >= 250)
+			  invertMotors();
+			if(rightStick.getRawButton(SPEED_SENSITIVITY_TOGGLE) && (System.currentTimeMillis() - lastSSTime) >= 250)
+				toggleSpeedSensitivity();
 
 			/* Periodic diagnostic messages */
 			if(ticks % 100 == 0) 
@@ -248,5 +241,40 @@ public class Robot extends SimpleRobot
 	//      compressor.stop();
 	//    }
 	//  }
+	}
+	
+	/**
+	 * Inverts the current state of the motors. If the motors are already inverted,
+	 * they are returned to normal. Useful to change whether the picking-up side
+	 * of the robot or the throwing side of the robot is the front.
+	 */
+	private void invertMotors()
+	{
+		lastReverseTime = System.currentTimeMillis();
+		isInverted = !isInverted;
+		for (int i = 0; i < 4; i++)
+			drivetrain.setInvertedMotor(motors[i], isInverted);
+	}
+	
+	/**
+	 * Toggles the angle of the axis camera. The camera can either be up or down.
+	 */
+	private void toggleCameraAngle()
+	{
+		if(isCameraUp)
+			cameraServo.set(cameraAngle[0]);
+		else
+			cameraServo.set(cameraAngle[1]);
+		isCameraUp = !isCameraUp;
+	}
+	
+	/**
+	 * Toggles the acceleration properties of the drivetrain. If <code>isSensitiveAtSlowSpeeds</code>
+	 * is <code>true</code>, the acceleration of the drivetrain is exponential, as opposed to linear.
+	 */
+	private void toggleSpeedSensitivity()
+	{
+		isSensitiveAtSlowSpeeds = !isSensitiveAtSlowSpeeds;
+		drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
 	}
 }
