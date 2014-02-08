@@ -120,8 +120,10 @@ public class Robot extends SimpleRobot {
     while(this.isOperatorControl() && this.isEnabled()) {
       drivetrain.tankDrive(leftStick, rightStick);
 
-      /* Z-axis is the throttle on the Logitech Attack 3
-       * it has a value on the interval [-1, 1]
+      /* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
+       * it has a value on the interval [-1, 1],
+	   * where -1 is physically located at the top of the lever (near the positive sign)
+	   * and 1 is at the bottom of the lever (near the negative sign)
        */
 
       double stickZLeft = 1 - ((leftStick.getZ() + 1) / 2);
