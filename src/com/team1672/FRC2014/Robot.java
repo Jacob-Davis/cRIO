@@ -1,6 +1,6 @@
 /*
     SARCS - Semi-Automatic Robot Control System
-    v1.0 'hockeycap'
+    v1.1 'junefire'
 
     This code is to be run on the cRIO.
 
@@ -147,14 +147,14 @@ public class Robot extends SimpleRobot {
 
       /* Solenoids */
       if(rightStick.getRawButton(FIRE_BUTTON)) {
-        pneumatic1.set(DoubleSolenoid.Value.kForward);
-        pneumatic2.set(DoubleSolenoid.Value.kForward);
+        leftSolenoid.set(DoubleSolenoid.Value.kForward);
+        rightSolenoid.set(DoubleSolenoid.Value.kForward);
       } else if(leftStick.getRawButton(FIRE_BUTTON)) {
-        pneumatic1.set(DoubleSolenoid.Value.kReverse);
-        pneumatic2.set(DoubleSolenoid.Value.kReverse);
+        leftSolenoid.set(DoubleSolenoid.Value.kReverse);
+        rightSolenoid.set(DoubleSolenoid.Value.kReverse);
       } else {
-        pneumatic1.set(DoubleSolenoid.Value.kOff);
-        pneumatic2.set(DoubleSolenoid.Value.kOff);
+        leftSolenoid.set(DoubleSolenoid.Value.kOff);
+        rightSolenoid.set(DoubleSolenoid.Value.kOff);
       }
 
       /* Camera controls */
