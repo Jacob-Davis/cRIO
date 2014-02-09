@@ -29,17 +29,18 @@ import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.SimpleRobot;
-import edu.wpi.first.wpilibj.Timer;
 
 public class Robot extends SimpleRobot
 {
 	// General functionality variables
+	private int lcdLine;
   private long ticks;
   private long lastReverseTime;
 	private long lastSwitchTime;
@@ -48,8 +49,9 @@ public class Robot extends SimpleRobot
   private boolean isInverted;
 	private boolean isCameraUp;
 	private boolean isSensitiveAtSlowSpeeds;
+	private String[] lcdLines;
 	private final DigitalInput pressureSwitch;
-
+	
   /* Buttons */
   public final int FIRE_BUTTON = 1;
   public final int LIFT_UP_BUTTON = 3;
@@ -86,17 +88,29 @@ public class Robot extends SimpleRobot
   public final int[] kLeftSolenoid = {1, 2};
   public final int[] kRightSolenoid = {3, 4};
 	
+	// Lines on the Driver Station LCD (User Messages Section)
+	public final DriverStationLCD.Line[] line = {DriverStationLCD.Line.kUser1,
+																							 DriverStationLCD.Line.kUser2,
+																							 DriverStationLCD.Line.kUser3,
+																							 DriverStationLCD.Line.kUser4,
+																							 DriverStationLCD.Line.kUser5,
+																							 DriverStationLCD.Line.kUser6};
+	
 	// Vital functionality objects
-	private RobotDrive drivetrain;
-  private Jaguar lift;
-  private Servo cameraServo;
-	private Compressor compressor;
-  private AnalogChannel ultrasonic;
-  private DoubleSolenoid leftSolenoid, rightSolenoid;
-	private Joystick leftStick, rightStick;
+	private final RobotDrive drivetrain;
+  private final Jaguar lift;
+  private final Servo cameraServo;
+	private final Compressor compressor;
+  private final AnalogChannel ultrasonic;
+  private final DoubleSolenoid leftSolenoid, rightSolenoid;
+	private final Joystick leftStick, rightStick;
+	private final DriverStationLCD lcd;
+	
   
   public Robot()
 	{
+		//Welcomes Neil, obviously the most important line of code here.
+		writeToLCD("Welcome, Neil! C:");
 		//Initializes functionality variables
 	  pressureSwitch = new DigitalInput(kPressureSwitch);
 	  lastSwitchTime = 0;
@@ -105,6 +119,8 @@ public class Robot extends SimpleRobot
 	  isInverted = false;
 		isSensitiveAtSlowSpeeds = false;
     ticks = 1;
+		lcdLine = 0;
+		lcdLines = new String[6];
 
 		//Sets up driving mechanisms (joysticks and drivetrain)
     leftStick = new Joystick(kLeftJoystick);
@@ -134,17 +150,20 @@ public class Robot extends SimpleRobot
 
 		//Sets up ultrasonic sensors
     ultrasonic = new AnalogChannel(1);
+		
+		//Sets up Driver Station LCD (User Messages section)
+		lcd = DriverStationLCD.getInstance();
 	}
 
 	public void autonomous() 
 	{
 	  /* TODO: Implement autonomous. */
-		System.out.println("Autonomous mode currently has no purpose; switch to manual operation.");
+		System.out.println("Autonomous mode enabled.");
 	}
 
 	public void operatorControl() 
 	{
-	  System.out.println("Driver operation enabled.");
+	  System.out.println("Teleoperation enabled");
 		drivetrain.setSafetyEnabled(false);
 		lift.setSafetyEnabled(false);
 	
@@ -264,6 +283,10 @@ public class Robot extends SimpleRobot
 		isInverted = !isInverted;
 		for (int i = 0; i < 4; i++)
 			drivetrain.setInvertedMotor(motors[i], isInverted);
+		if (isInverted)
+			writeToLCD("Motors are inverted. Shooter is front.");
+		else
+			writeToLCD("Motors are normal. Pick-up is front.");
 	}
 	
 	/**
@@ -272,9 +295,15 @@ public class Robot extends SimpleRobot
 	private void toggleCameraAngle()
 	{
 		if(isCameraUp)
+		{
 			cameraServo.set(cameraAngle[0]);
+			writeToLCD("Camera view is the arm.");
+		}
 		else
+		{
 			cameraServo.set(cameraAngle[1]);
+			writeToLCD("Camera view is the field");
+		}
 		isCameraUp = !isCameraUp;
 	}
 	
@@ -286,5 +315,39 @@ public class Robot extends SimpleRobot
 	{
 		isSensitiveAtSlowSpeeds = !isSensitiveAtSlowSpeeds;
 		drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
+		if (isSensitiveAtSlowSpeeds)
+		{
+			writeToLCD("The acceleration curve is exponential.");
+			writeToLCD("The joysticks will not be sensitive at slow speeds.");
+		}
+		else
+		{
+			writeToLCD("The acceleration curve is linear.");
+			writeToLCD("The joysticks will be sensitive at slow speeds.");
+		}
+		
+	}
+	
+	/**
+	 * Writes a line of text to the User Messages section of the Driver Station.
+	 * Lines of text are aligned left and may not be longer that 21 characters.
+	 * @param text The text to be written to the User Messages box. This String may not be longer than 21 characters.
+	 */
+	private void writeToLCD(String text)
+	{
+		if (lcdLine < 6)
+		{
+			lcd.println(line[lcdLine], 1, text);
+			lcdLines[lcdLine] = text;
+			lcdLine++;
+			lcd.updateLCD();
+		}
+		else
+		{
+			lcd.clear();
+			for (int i = 1; i < 6; i++)
+				lcd.println(line[i-1], 1, lcdLines[i]);
+			lcd.println(line[5], 1, text);
+		}
 	}
 }
