@@ -25,6 +25,8 @@ package com.team1672.FRC2014;
 /**
  * Gets the goodies.
  */
+import java.lang.Math;
+import java.lang.String;
 import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -36,6 +38,7 @@ import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.SimpleRobot;
+import edu.wpi.first.wpilibj.Ultrasonic;
 
 public class Robot extends SimpleRobot
 {
@@ -49,8 +52,9 @@ public class Robot extends SimpleRobot
   private boolean isInverted;
 	private boolean isCameraUp;
 	private boolean isSensitiveAtSlowSpeeds;
-	private String[] lcdLines;
-	private final DigitalInput pressureSwitch;
+	private String[] lcdLines = {"", "", "", "", "", ""};
+	private Ultrasonic.Unit leftDistance, rightDistance;
+	//private final DigitalInput pressureSwitch;
 	
   /* Buttons */
   public final int FIRE_BUTTON = 1;
@@ -63,8 +67,12 @@ public class Robot extends SimpleRobot
   public final int kLeftJoystick = 1;
   public final int kRightJoystick = 2;
 	public final double LIFT_SPEED = 0.25;
+	// Other constants
 	public final double[] cameraAngle = {0.7, 0.85};
-  
+//	public final int[] US_PING_CHANNELS; // = { IMPLEMENT ME }
+//	public final int[] US_ECHO_CHANNELS; // = { IMPLEMENT ME }
+//  public final Ultrasonic.Unit INCHES = Ultrasonic.Unit.kInches;
+//  public final Ultrasonic.Unit MILLIMETERS = Ultrasonic.Unit.kMillimeter;
 
   /* PWM Channels controlling motors */
   public final int[] kDrivetrain = {1, 2, 3, 4};
@@ -101,18 +109,16 @@ public class Robot extends SimpleRobot
   private final Jaguar lift;
   private final Servo cameraServo;
 	private final Compressor compressor;
-  private final AnalogChannel ultrasonic;
+//  private final Ultrasonic leftSensor, rightSensor;
   private final DoubleSolenoid leftSolenoid, rightSolenoid;
 	private final Joystick leftStick, rightStick;
 	private final DriverStationLCD lcd;
 	
-  
   public Robot()
 	{
-		//Welcomes Neil, obviously the most important line of code here.
-		writeToLCD("Welcome, Neil! C:");
+		
 		//Initializes functionality variables
-	  pressureSwitch = new DigitalInput(kPressureSwitch);
+	  //pressureSwitch = new DigitalInput(kPressureSwitch);
 	  lastSwitchTime = 0;
 	  lastReverseTime = 0;
 	  isCompressorOn = false;
@@ -120,7 +126,6 @@ public class Robot extends SimpleRobot
 		isSensitiveAtSlowSpeeds = false;
     ticks = 1;
 		lcdLine = 0;
-		lcdLines = new String[6];
 
 		//Sets up driving mechanisms (joysticks and drivetrain)
     leftStick = new Joystick(kLeftJoystick);
@@ -146,13 +151,24 @@ public class Robot extends SimpleRobot
     rightSolenoid.set(DoubleSolenoid.Value.kOff);
 
 		//Sets up compressor
-    compressor = new Compressor(2, 13, 2, 1);
+    compressor = new Compressor(13, 1);
+		compressor.start();
+		compressor.setRelayValue(Relay.Value.kForward);
+		
+		//compressor = new Relay(1);
 
 		//Sets up ultrasonic sensors
-    ultrasonic = new AnalogChannel(1);
+//    leftSensor = new Ultrasonic(US_PING_CHANNELS[0], US_ECHO_CHANNELS[0], INCHES);
+//		leftSensor.setEnabled(true);
+//		leftSensor.setAutomaticMode(true);
+//    rightSensor = new Ultrasonic(US_PING_CHANNELS[1], US_ECHO_CHANNELS[1], INCHES);
+//		rightSensor.setEnabled(true);
+//		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
 		lcd = DriverStationLCD.getInstance();
+		//Welcomes Neil, obviously the most important line of code here.
+		writeToLCD("Welcome, Neil! C:");
 	}
 
 	public void autonomous() 
@@ -190,9 +206,9 @@ public class Robot extends SimpleRobot
 			else
 				lift.set(0);
 
-			System.out.println("Pneumatic switch: " + pressureSwitch.get());
 			System.out.println("Compressor: " + isCompressorOn);
 			
+			/*
 			//Compressor controls (TEMPORARY)
 		  if((leftStick.getRawButton(COMPRESSOR_BUTTON) || rightStick.getRawButton(COMPRESSOR_BUTTON)) && (System.currentTimeMillis() - lastSwitchTime) >= 250)
 		  {
@@ -207,6 +223,7 @@ public class Robot extends SimpleRobot
 			  compressor.start();
 	    else
 		    compressor.stop();
+			*/
 			
 	    /**
 			 * Solenoid controls
@@ -243,7 +260,7 @@ public class Robot extends SimpleRobot
 			if(ticks % 100 == 0) 
 			{
 				System.out.println("Current tick: " + ticks);
-				System.out.println("Analog channel 1: " + ultrasonic.getValue());
+//				System.out.println("Analog channel 1: " + ultrasonic.getValue());
 			}
 	    ticks++;
 		}
@@ -335,6 +352,9 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD(String text)
 	{
+		/*
+		System.out.println("lcdLine: " + lcdLine);
+		System.out.println("text: " + text);
 		if (lcdLine < 6)
 		{
 			lcd.println(line[lcdLine], 1, text);
@@ -348,6 +368,31 @@ public class Robot extends SimpleRobot
 			for (int i = 1; i < 6; i++)
 				lcd.println(line[i-1], 1, lcdLines[i]);
 			lcd.println(line[5], 1, text);
+		*/
 		}
+	
+	
+	/**
+	 * Measures distance using the ultrasonic sensors and returns the 
+	 * average of the two sensor readings.
+	 * @return The distance value as a double, rounded to 2 decimal places.
+	 */
+	/*
+	private double measureDistances()
+	{
+		//I should really use the FRC Dashboard to implement this
+		int leftRange = leftSensor.getRangeInches();
+		int rightRange = rightSensor.getRangeInches();
+		double range = (leftRange + rightRange)/2;
+		String r = range;
+		String[] separated = r.split(".");
+		String end = separated[0] + ".";
+		if (separated[1] > 2)
+		{
+			end += separated[1].charAt(0);
+			end += separated[1].charAt(1);
+		}
+		return String.toDouble(end);
 	}
+	*/
 }
