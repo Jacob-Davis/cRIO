@@ -201,25 +201,6 @@ public class Robot extends SimpleRobot
 				lift.set(-LIFT_SPEED);
 			else
 				lift.set(0);
-
-			System.out.println("Compressor: " + isCompressorOn);
-			
-			/*
-			//Compressor controls (TEMPORARY)
-		  if((leftStick.getRawButton(COMPRESSOR_BUTTON) || rightStick.getRawButton(COMPRESSOR_BUTTON)) && (System.currentTimeMillis() - lastSwitchTime) >= 250)
-		  {
-			  lastSwitchTime = System.currentTimeMillis();
-				isCompressorOn = !isCompressorOn;
-		  }
-		  if(isCompressorOn)
-			  compressor.setRelayValue(Relay.Value.kForward);
-			else
-				compressor.setRelayValue(Relay.Value.kOff);
-		  if(compressor.getPressureSwitchValue())
-			  compressor.start();
-	    else
-		    compressor.stop();
-			*/
 			
 	    /**
 			 * Solenoid controls
