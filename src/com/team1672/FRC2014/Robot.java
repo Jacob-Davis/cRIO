@@ -65,11 +65,9 @@ public class Robot extends SimpleRobot
 	public final double LIFT_SPEED = 0.25;
 	
 	// Other constants
+	public final int[] PING_CHANNELS = {1, 3};
+	public final int[] ECHO_CHANNELS = {2, 4};
 	public final double[] cameraAngle = {0.7, 0.85};
-//	public final int[] US_PING_CHANNELS; // = { IMPLEMENT ME }
-//	public final int[] US_ECHO_CHANNELS; // = { IMPLEMENT ME }
-//  public final Ultrasonic.Unit INCHES = Ultrasonic.Unit.kInches;
-//  public final Ultrasonic.Unit MILLIMETERS = Ultrasonic.Unit.kMillimeter;
 
   /* PWM Channels controlling motors */
   public final int[] kDrivetrain = {1, 2, 3, 4};
@@ -109,7 +107,7 @@ public class Robot extends SimpleRobot
   private final DoubleSolenoid leftSolenoid, rightSolenoid;
 	private final Joystick leftStick, rightStick;
 	private final DriverStationLCD lcd;
-//  private final Ultrasonic leftSensor, rightSensor;
+  private final Ultrasonic leftSensor, rightSensor;
 	
   public Robot()
 	{
@@ -152,12 +150,12 @@ public class Robot extends SimpleRobot
 		compressor.start();
 
 		//Sets up ultrasonic sensors
-//    leftSensor = new Ultrasonic(US_PING_CHANNELS[0], US_ECHO_CHANNELS[0], INCHES);
-//		leftSensor.setEnabled(true);
-//		leftSensor.setAutomaticMode(true);
-//    rightSensor = new Ultrasonic(US_PING_CHANNELS[1], US_ECHO_CHANNELS[1], INCHES);
-//		rightSensor.setEnabled(true);
-//		rightSensor.setAutomaticMode(true);
+    leftSensor = new Ultrasonic(PING_CHANNELS[0], ECHO_CHANNELS[0]);
+		leftSensor.setEnabled(true);
+		leftSensor.setAutomaticMode(true);
+    rightSensor = new Ultrasonic(PING_CHANNELS[1], ECHO_CHANNELS[1]);
+		rightSensor.setEnabled(true);
+		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
 		lcd = DriverStationLCD.getInstance();
@@ -179,21 +177,25 @@ public class Robot extends SimpleRobot
 	  System.out.println("Teleoperation enabled");
 		drivetrain.setSafetyEnabled(false);
 		lift.setSafetyEnabled(false);
+		
+		//Initial solenoid maintenance
+		leftSolenoid.set(DoubleSolenoid.Value.kOff);
+		rightSolenoid.set(DoubleSolenoid.Value.kOff);
 	
 		while(this.isOperatorControl() && this.isEnabled()) 
 		{
 			drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
-     
-		/* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
-     * it has a value on the interval [-1, 1], where -1 is physically 
-		 * located at the top of the lever (near the positive sign)
-	   * and 1 is at the bottom of the lever (near the negative sign).
-		 * This feature is not currently implemented.
-		 * 
-     * double stickZLeft = 1 - ((leftStick.getZ() + 1) / 2);
-		 * double stickZRight = 1 - ((rightStick.getZ() + 1) / 2);
-		 * double liftSpeed = (stickZLeft + stickZRight) / 2;
-		 */
+			
+			/* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
+		   * it has a value on the interval [-1, 1], where -1 is physically 
+			 * located at the top of the lever (near the positive sign)
+		   * and 1 is at the bottom of the lever (near the negative sign).
+			 * This feature is not currently implemented.
+			 *	 
+		   * double stickZLeft = 1 - ((leftStick.getZ() + 1) / 2);
+			 * double stickZRight = 1 - ((rightStick.getZ() + 1) / 2);
+			 * double liftSpeed = (stickZLeft + stickZRight) / 2;
+			 */
 			
 			//Lift mechanism controls
 			if(rightStick.getRawButton(LIFT_DOWN_BUTTON))
@@ -340,20 +342,21 @@ public class Robot extends SimpleRobot
 	 * average of the two sensor readings.
 	 * @return The distance value as a double, rounded to 2 decimal places.
 	 */
-//	private double measureDistances()
-//	{
-//		//I should really use the FRC Dashboard to implement this
-//		int leftRange = leftSensor.getRangeInches();
-//		int rightRange = rightSensor.getRangeInches();
-//		double range = (leftRange + rightRange)/2;
-//		String r = range;
+	private double measureDistances()
+	{
+		//I should really use the FRC Dashboard to implement this
+		double leftRange = leftSensor.getRangeInches();
+		double rightRange = rightSensor.getRangeInches();
+		double range = (leftRange + rightRange)/2;
+//		String r = Double.toString(range);
 //		String[] separated = r.split(".");
 //		String end = separated[0] + ".";
-//		if (separated[1] > 2)
+//		if (separated[1].length() > 2)
 //		{
 //			end += separated[1].charAt(0);
 //			end += separated[1].charAt(1);
 //		}
-//		return String.toDouble(end);
-//	}
+//		return Double.parseDouble(end); 
+		return range;
+	}
 }
