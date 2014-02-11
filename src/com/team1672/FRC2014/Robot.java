@@ -25,11 +25,7 @@ package com.team1672.FRC2014;
 /**
  * Gets the goodies.
  */
-import java.lang.Math;
-import java.lang.String;
-import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.Jaguar;
@@ -52,9 +48,8 @@ public class Robot extends SimpleRobot
   private boolean isInverted;
 	private boolean isCameraUp;
 	private boolean isSensitiveAtSlowSpeeds;
-	private String[] lcdLines = {"", "", "", "", "", ""};
-	private Ultrasonic.Unit leftDistance, rightDistance;
-	//private final DigitalInput pressureSwitch;
+//	private String[] lcdLines;
+//	private Ultrasonic.Unit leftDistance, rightDistance;
 	
   /* Buttons */
   public final int FIRE_BUTTON = 1;
@@ -63,10 +58,12 @@ public class Robot extends SimpleRobot
   public final int CAMERA_TOGGLE = 3;
   public final int COMPRESSOR_BUTTON = 5;
 	public final int SPEED_SENSITIVITY_TOGGLE = 11;
+	
   /* Joystick USB Ports */ /* XXX: This may vary on different computers at different times */
   public final int kLeftJoystick = 1;
   public final int kRightJoystick = 2;
 	public final double LIFT_SPEED = 0.25;
+	
 	// Other constants
 	public final double[] cameraAngle = {0.7, 0.85};
 //	public final int[] US_PING_CHANNELS; // = { IMPLEMENT ME }
@@ -97,28 +94,26 @@ public class Robot extends SimpleRobot
   public final int[] kRightSolenoid = {3, 4};
 	
 	// Lines on the Driver Station LCD (User Messages Section)
-	public final DriverStationLCD.Line[] line = {DriverStationLCD.Line.kUser1,
-																							 DriverStationLCD.Line.kUser2,
-																							 DriverStationLCD.Line.kUser3,
-																							 DriverStationLCD.Line.kUser4,
-																							 DriverStationLCD.Line.kUser5,
-																							 DriverStationLCD.Line.kUser6};
+//	public final DriverStationLCD.Line[] line = {DriverStationLCD.Line.kUser1,
+//																							 DriverStationLCD.Line.kUser2,
+//																							 DriverStationLCD.Line.kUser3,
+//																							 DriverStationLCD.Line.kUser4,
+//																							 DriverStationLCD.Line.kUser5,
+//																							 DriverStationLCD.Line.kUser6};
 	
 	// Vital functionality objects
 	private final RobotDrive drivetrain;
   private final Jaguar lift;
   private final Servo cameraServo;
 	private final Compressor compressor;
-//  private final Ultrasonic leftSensor, rightSensor;
   private final DoubleSolenoid leftSolenoid, rightSolenoid;
 	private final Joystick leftStick, rightStick;
-	private final DriverStationLCD lcd;
+//	private final DriverStationLCD lcd;
+//  private final Ultrasonic leftSensor, rightSensor;
 	
   public Robot()
 	{
-		
 		//Initializes functionality variables
-	  //pressureSwitch = new DigitalInput(kPressureSwitch);
 	  lastSwitchTime = 0;
 	  lastReverseTime = 0;
 	  isCompressorOn = false;
@@ -152,10 +147,8 @@ public class Robot extends SimpleRobot
 
 		//Sets up compressor
     compressor = new Compressor(13, 1);
-		compressor.start();
 		compressor.setRelayValue(Relay.Value.kForward);
-		
-		//compressor = new Relay(1);
+		compressor.start();
 
 		//Sets up ultrasonic sensors
 //    leftSensor = new Ultrasonic(US_PING_CHANNELS[0], US_ECHO_CHANNELS[0], INCHES);
@@ -166,9 +159,12 @@ public class Robot extends SimpleRobot
 //		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
-		lcd = DriverStationLCD.getInstance();
+//		lcd = DriverStationLCD.getInstance();
+//		lcdLines = new String[6];
+//		for (int i = 0; i < 6; i++)
+//			lcdLines[i] = "";
 		//Welcomes Neil, obviously the most important line of code here.
-		writeToLCD("Welcome, Neil! C:");
+//		writeToLCD("Welcome, Neil! C:");
 	}
 
 	public void autonomous() 
@@ -258,10 +254,7 @@ public class Robot extends SimpleRobot
 
 			/* Periodic diagnostic messages */
 			if(ticks % 100 == 0) 
-			{
 				System.out.println("Current tick: " + ticks);
-//				System.out.println("Analog channel 1: " + ultrasonic.getValue());
-			}
 	    ticks++;
 		}
 	}
@@ -352,23 +345,21 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD(String text)
 	{
-		/*
-		System.out.println("lcdLine: " + lcdLine);
-		System.out.println("text: " + text);
-		if (lcdLine < 6)
-		{
-			lcd.println(line[lcdLine], 1, text);
-			lcdLines[lcdLine] = text;
-			lcdLine++;
-			lcd.updateLCD();
-		}
-		else
-		{
-			lcd.clear();
-			for (int i = 1; i < 6; i++)
-				lcd.println(line[i-1], 1, lcdLines[i]);
-			lcd.println(line[5], 1, text);
-		*/
+//		System.out.println("lcdLine: " + lcdLine);
+//		System.out.println("text: " + text);
+//		if (lcdLine < 6)
+//		{
+//			lcd.println(line[lcdLine], 1, text);
+//			lcdLines[lcdLine] = text;
+//			lcdLine++;
+//			lcd.updateLCD();
+//		}
+//		else
+//		{
+//			lcd.clear();
+//			for (int i = 1; i < 6; i++)
+//				lcd.println(line[i-1], 1, lcdLines[i]);
+//			lcd.println(line[5], 1, text);
 		}
 	
 	
@@ -377,22 +368,20 @@ public class Robot extends SimpleRobot
 	 * average of the two sensor readings.
 	 * @return The distance value as a double, rounded to 2 decimal places.
 	 */
-	/*
-	private double measureDistances()
-	{
-		//I should really use the FRC Dashboard to implement this
-		int leftRange = leftSensor.getRangeInches();
-		int rightRange = rightSensor.getRangeInches();
-		double range = (leftRange + rightRange)/2;
-		String r = range;
-		String[] separated = r.split(".");
-		String end = separated[0] + ".";
-		if (separated[1] > 2)
-		{
-			end += separated[1].charAt(0);
-			end += separated[1].charAt(1);
-		}
-		return String.toDouble(end);
-	}
-	*/
+//	private double measureDistances()
+//	{
+//		//I should really use the FRC Dashboard to implement this
+//		int leftRange = leftSensor.getRangeInches();
+//		int rightRange = rightSensor.getRangeInches();
+//		double range = (leftRange + rightRange)/2;
+//		String r = range;
+//		String[] separated = r.split(".");
+//		String end = separated[0] + ".";
+//		if (separated[1] > 2)
+//		{
+//			end += separated[1].charAt(0);
+//			end += separated[1].charAt(1);
+//		}
+//		return String.toDouble(end);
+//	}
 }
