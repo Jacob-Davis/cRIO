@@ -40,15 +40,15 @@ public class Robot extends SimpleRobot
 {
 	// General functionality variables
 	private int lcdLine;
-  private long ticks;
+	private long lastAngleTime;
   private long lastReverseTime;
-	private long lastSwitchTime;
 	private long lastSSTime;
+	private long lastSwitchTime;
   private boolean isCompressorOn;
   private boolean isInverted;
 	private boolean isCameraUp;
 	private boolean isSensitiveAtSlowSpeeds;
-//	private String[] lcdLines;
+	private String[] lcdLines;
 //	private Ultrasonic.Unit leftDistance, rightDistance;
 	
   /* Buttons */
@@ -94,12 +94,12 @@ public class Robot extends SimpleRobot
   public final int[] kRightSolenoid = {3, 4};
 	
 	// Lines on the Driver Station LCD (User Messages Section)
-//	public final DriverStationLCD.Line[] line = {DriverStationLCD.Line.kUser1,
-//																							 DriverStationLCD.Line.kUser2,
-//																							 DriverStationLCD.Line.kUser3,
-//																							 DriverStationLCD.Line.kUser4,
-//																							 DriverStationLCD.Line.kUser5,
-//																							 DriverStationLCD.Line.kUser6};
+	public final DriverStationLCD.Line[] line = {DriverStationLCD.Line.kUser1,
+																							 DriverStationLCD.Line.kUser2,
+																							 DriverStationLCD.Line.kUser3,
+																							 DriverStationLCD.Line.kUser4,
+																							 DriverStationLCD.Line.kUser5,
+																							 DriverStationLCD.Line.kUser6};
 	
 	// Vital functionality objects
 	private final RobotDrive drivetrain;
@@ -108,18 +108,19 @@ public class Robot extends SimpleRobot
 	private final Compressor compressor;
   private final DoubleSolenoid leftSolenoid, rightSolenoid;
 	private final Joystick leftStick, rightStick;
-//	private final DriverStationLCD lcd;
+	private final DriverStationLCD lcd;
 //  private final Ultrasonic leftSensor, rightSensor;
 	
   public Robot()
 	{
 		//Initializes functionality variables
-	  lastSwitchTime = 0;
+	  lastAngleTime = 0;
 	  lastReverseTime = 0;
+		lastSSTime = 0;
+		lastSwitchTime = 0;
 	  isCompressorOn = false;
 	  isInverted = false;
 		isSensitiveAtSlowSpeeds = false;
-    ticks = 1;
 		lcdLine = 0;
 
 		//Sets up driving mechanisms (joysticks and drivetrain)
@@ -159,12 +160,12 @@ public class Robot extends SimpleRobot
 //		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
-//		lcd = DriverStationLCD.getInstance();
-//		lcdLines = new String[6];
-//		for (int i = 0; i < 6; i++)
-//			lcdLines[i] = "";
+		lcd = DriverStationLCD.getInstance();
+		lcdLines = new String[6];
+		for (int i = 0; i < 6; i++)
+			lcdLines[i] = "";
 		//Welcomes Neil, obviously the most important line of code here.
-//		writeToLCD("Welcome, Neil! C:");
+		writeToLCD("Welcome, Neil! C:");
 	}
 
 	public void autonomous() 
@@ -224,7 +225,7 @@ public class Robot extends SimpleRobot
 			}
 		
 			//Camera control (up/down toggle)
-			if(leftStick.getRawButton(CAMERA_TOGGLE)) 
+			if(leftStick.getRawButton(CAMERA_TOGGLE) && (System.currentTimeMillis() - lastAngleTime) >= 250) 
 				toggleCameraAngle();
 			//Motor inversion control
 		  if(rightStick.getRawButton(11) && (System.currentTimeMillis() - lastReverseTime) >= 250)
@@ -232,11 +233,6 @@ public class Robot extends SimpleRobot
 			//Acceleration curve toggle (linear/exponential)
 			if(rightStick.getRawButton(SPEED_SENSITIVITY_TOGGLE) && (System.currentTimeMillis() - lastSSTime) >= 250)
 				toggleSpeedSensitivity();
-
-			/* Periodic diagnostic messages */
-			if(ticks % 100 == 0) 
-				System.out.println("Current tick: " + ticks);
-	    ticks++;
 		}
 	}
 
@@ -252,15 +248,7 @@ public class Robot extends SimpleRobot
 
 	public void disabled() 
 	{
-	//	compressor.setRelayValue(Relay.Value.kForward);
-	//	compressor.start();
-	//  while (!this.isEnabled()) {
-	//    if(!compressor.getPressureSwitchValue()) {
-	//      compressor.start();
-	//    } else {
-	//      compressor.stop();
-	//    }
-	//  }
+		System.out.println("Robot is disabled");
 	}
 	
 	/**
@@ -326,22 +314,25 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD(String text)
 	{
-//		System.out.println("lcdLine: " + lcdLine);
-//		System.out.println("text: " + text);
-//		if (lcdLine < 6)
-//		{
-//			lcd.println(line[lcdLine], 1, text);
-//			lcdLines[lcdLine] = text;
-//			lcdLine++;
-//			lcd.updateLCD();
-//		}
-//		else
-//		{
-//			lcd.clear();
-//			for (int i = 1; i < 6; i++)
-//				lcd.println(line[i-1], 1, lcdLines[i]);
-//			lcd.println(line[5], 1, text);
+		if (lcdLine < 6)
+		{
+			lcd.println(line[lcdLine], 1, text);
+			lcdLines[lcdLine] = text;
+			lcdLine++;
+			lcd.updateLCD();
 		}
+		else
+		{
+			lcd.clear();
+			for (int i = 1; i < 6; i++)
+			{
+				lcd.println(line[i-1], 1, lcdLines[i]);
+				lcdLines[i-1] = lcdLines[i];
+			}
+			lcdLines[5] = text;
+			lcd.println(line[5], 1, text);
+		}
+	}
 	
 	
 	/**
