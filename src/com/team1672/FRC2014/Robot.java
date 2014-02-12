@@ -28,6 +28,7 @@ package com.team1672.FRC2014;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStationLCD;
+import edu.wpi.first.wpilibj.DriverStationLCD.Line;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Relay;
@@ -107,7 +108,7 @@ public class Robot extends SimpleRobot
   private final DoubleSolenoid leftSolenoid, rightSolenoid;
 	private final Joystick leftStick, rightStick;
 	private final DriverStationLCD lcd;
-//  private final Ultrasonic leftSensor, rightSensor;
+  private final Ultrasonic leftSensor, rightSensor;
 	
   public Robot()
 	{
@@ -150,20 +151,18 @@ public class Robot extends SimpleRobot
 		compressor.start();
 
 		//Sets up ultrasonic sensors
-//    leftSensor = new Ultrasonic(PING_CHANNELS[0], ECHO_CHANNELS[0]);
-//		leftSensor.setEnabled(true);
-//		leftSensor.setAutomaticMode(true);
-//    rightSensor = new Ultrasonic(PING_CHANNELS[1], ECHO_CHANNELS[1]);
-//		rightSensor.setEnabled(true);
-//		rightSensor.setAutomaticMode(true);
+    leftSensor = new Ultrasonic(PING_CHANNELS[0], ECHO_CHANNELS[0]);
+		leftSensor.setEnabled(true);
+		leftSensor.setAutomaticMode(true);
+    rightSensor = new Ultrasonic(PING_CHANNELS[1], ECHO_CHANNELS[1]);
+		rightSensor.setEnabled(true);
+		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
 		lcd = DriverStationLCD.getInstance();
 		lcdLines = new String[6];
 		for (int i = 0; i < 6; i++)
 			lcdLines[i] = "";
-		//Welcomes Neil, obviously the most important line of code here.
-		writeToLCD("Welcome, Neil! C:");
 	}
 
 	public void autonomous() 
@@ -235,6 +234,9 @@ public class Robot extends SimpleRobot
 			//Acceleration curve toggle (linear/exponential)
 			if(rightStick.getRawButton(SPEED_SENSITIVITY_TOGGLE) && (System.currentTimeMillis() - lastSSTime) >= 250)
 				toggleSpeedSensitivity();
+			
+			//Push real-time information to Driver Station LCD (User Messages section)
+			writeToLCD();
 		}
 	}
 
@@ -264,10 +266,6 @@ public class Robot extends SimpleRobot
 		isInverted = !isInverted;
 		for (int i = 0; i < 4; i++)
 			drivetrain.setInvertedMotor(motors[i], isInverted);
-		if (isInverted)
-			writeToLCD("Motors are inverted. Shooter is front.");
-		else
-			writeToLCD("Motors are normal. Pick-up is front.");
 	}
 	
 	/**
@@ -277,18 +275,10 @@ public class Robot extends SimpleRobot
 	{
 		lastAngleTime = System.currentTimeMillis();
 		if(isCameraUp)
-		{
 			cameraServo.set(cameraAngle[0]);
-			writeToLCD("Camera view is the arm.");
-		}
 		else
-		{
 			cameraServo.set(cameraAngle[1]);
-			writeToLCD("Camera view is the field");
-		}
 		isCameraUp = !isCameraUp;
-		System.out.println(cameraAngle[0] + ", " + cameraAngle[1]);
-		System.out.println("isCameraUp: " + isCameraUp);
 	}
 	
 	/**
@@ -300,16 +290,6 @@ public class Robot extends SimpleRobot
 		lastSSTime = System.currentTimeMillis();
 		isSensitiveAtSlowSpeeds = !isSensitiveAtSlowSpeeds;
 		drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
-		if (isSensitiveAtSlowSpeeds)
-		{
-			writeToLCD("The acceleration curve is exponential.");
-			writeToLCD("The joysticks will not be sensitive at slow speeds.");
-		}
-		else
-		{
-			writeToLCD("The acceleration curve is linear.");
-			writeToLCD("The joysticks will be sensitive at slow speeds.");
-		}
 	}
 	
 	/**
@@ -317,49 +297,25 @@ public class Robot extends SimpleRobot
 	 * Lines of text are aligned left and may not be longer that 21 characters.
 	 * @param text The text to be written to the User Messages box. This String may not be longer than 21 characters.
 	 */
-	private void writeToLCD(String text)
+	private void writeToLCD()
 	{
-	//	if (lcdLine < 6)
-	//	{
-	//		lcd.println(line[lcdLine], 1, text);
-	//		lcdLines[lcdLine] = text;
-	//		lcdLine++;
-	//		lcd.updateLCD();
-	//	}
-	//	else
-	//	{
-	//		lcd.clear();
-	//		for (int i = 1; i < 6; i++)
-	//		{
-	//			lcd.println(line[i-1], 1, lcdLines[i]);
-	//			lcdLines[i-1] = lcdLines[i];
-	//		}
-	//		lcdLines[5] = text;
-	//		lcd.println(line[5], 1, text);
-	//	}
-	}
-	
-	
-	/**
-	 * Measures distance using the ultrasonic sensors and returns the 
-	 * average of the two sensor readings.
-	 * @return The distance value as a double, rounded to 2 decimal places.
-	 */
-//	private double measureDistances()
-//	{
-		//I should really use the FRC Dashboard to implement this
-//		double leftRange = leftSensor.getRangeInches();
-//		double rightRange = rightSensor.getRangeInches();
-//		double range = (leftRange + rightRange)/2;
-//		String r = Double.toString(range);
-//		String[] separated = r.split(".");
-//		String end = separated[0] + ".";
-//		if (separated[1].length() > 2)
-//		{
-//			end += separated[1].charAt(0);
-//			end += separated[1].charAt(1);
-//		}
-//		return Double.parseDouble(end); 
-//		return range;
-//	}
+		lcd.println(Line.kUser1, 0, "Welcome, Neil! C:");
+		lcd.println(Line.kUser2, 0, (isInverted) ? "Motors are inverted. Shooter is front." 
+																						 : "Motors are normal. Pick-up is front.");
+		lcd.println(Line.kUser3, 0, (isSensitiveAtSlowSpeeds) ? "Acc. Curve: Exponential. Not sensitive at slow speeds." 
+																													: "Acc. Curve: Linear. Sensitive at slow speeds.");
+		lcd.println(Line.kUser4, 0, (isCameraUp) ? "Camera: Up. View is the field."
+																						 : "Camera: Down. View is the arm.");
+		double left = leftSensor.getRangeInches();
+		double right = rightSensor.getRangeInches();
+		double average = (left + right) / 2.0;
+		lcd.println(Line.kUser5, 0, "LS: " + left + "   RS: " + right + "   Avg: " + average);
+		/**
+		 * Implement something here to say "You can shoot!", "You should 
+		 * probably get closer.", and "You might want to back up."
+		 * 
+		 * lcd.println(Line.kUser6, 0, text);
+		 * 
+		 */
+	}	
 }
