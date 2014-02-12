@@ -40,7 +40,6 @@ import edu.wpi.first.wpilibj.Ultrasonic;
 public class Robot extends SimpleRobot
 {
 	// General functionality variables
-	private int lcdLine;
 	private long lastAngleTime;
   private long lastReverseTime;
 	private long lastSSTime;
@@ -48,9 +47,6 @@ public class Robot extends SimpleRobot
   private boolean isCompressorOn;
   private boolean isInverted;
 	private boolean isCameraUp;
-	private boolean isSensitiveAtSlowSpeeds;
-	private String[] lcdLines;
-//	private Ultrasonic.Unit leftDistance, rightDistance;
 	
   /* Buttons */
   public final int FIRE_BUTTON = 1;
@@ -58,7 +54,6 @@ public class Robot extends SimpleRobot
   public final int LIFT_DOWN_BUTTON = 2;
   public final int CAMERA_TOGGLE = 3;
   public final int COMPRESSOR_BUTTON = 5;
-	public final int SPEED_SENSITIVITY_TOGGLE = 11;
 	
   /* Joystick USB Ports */ /* XXX: This may vary on different computers at different times */
   public final int kLeftJoystick = 1;
@@ -67,7 +62,7 @@ public class Robot extends SimpleRobot
 	
 	// Other constants
 	public final int[] PING_CHANNELS = {1, 3};
-	public final int[] ECHO_CHANNELS = {2, 4};
+	public final int[] PONG_CHANNELS = {2, 4};
 	public final double[] cameraAngle = {0.7, 0.85};
 
   /* PWM Channels controlling motors */
@@ -119,8 +114,6 @@ public class Robot extends SimpleRobot
 		lastSwitchTime = 0;
 	  isCompressorOn = false;
 	  isInverted = false;
-		isSensitiveAtSlowSpeeds = false;
-		lcdLine = 0;
 
 		//Sets up driving mechanisms (joysticks and drivetrain)
     leftStick = new Joystick(kLeftJoystick);
@@ -151,18 +144,15 @@ public class Robot extends SimpleRobot
 		compressor.start();
 
 		//Sets up ultrasonic sensors
-    leftSensor = new Ultrasonic(PING_CHANNELS[0], ECHO_CHANNELS[0]);
+    leftSensor = new Ultrasonic(PING_CHANNELS[0], PONG_CHANNELS[0]);
 		leftSensor.setEnabled(true);
 		leftSensor.setAutomaticMode(true);
-    rightSensor = new Ultrasonic(PING_CHANNELS[1], ECHO_CHANNELS[1]);
+    rightSensor = new Ultrasonic(PING_CHANNELS[1], PONG_CHANNELS[1]);
 		rightSensor.setEnabled(true);
 		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
 		lcd = DriverStationLCD.getInstance();
-		lcdLines = new String[6];
-		for (int i = 0; i < 6; i++)
-			lcdLines[i] = "";
 	}
 
 	public void autonomous() 
@@ -183,7 +173,7 @@ public class Robot extends SimpleRobot
 	
 		while(this.isOperatorControl() && this.isEnabled()) 
 		{
-			drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
+			drivetrain.tankDrive(leftStick, rightStick);
 			
 			/* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
 		   * it has a value on the interval [-1, 1], where -1 is physically 
@@ -231,9 +221,6 @@ public class Robot extends SimpleRobot
 			//Motor inversion control
 		  if(rightStick.getRawButton(11) && (System.currentTimeMillis() - lastReverseTime) >= 250)
 			  invertMotors();
-			//Acceleration curve toggle (linear/exponential)
-			if(rightStick.getRawButton(SPEED_SENSITIVITY_TOGGLE) && (System.currentTimeMillis() - lastSSTime) >= 250)
-				toggleSpeedSensitivity();
 			
 			//Push real-time information to Driver Station LCD (User Messages section)
 			writeToLCD();
@@ -282,17 +269,6 @@ public class Robot extends SimpleRobot
 	}
 	
 	/**
-	 * Toggles the acceleration properties of the drivetrain. If <code>isSensitiveAtSlowSpeeds</code>
-	 * is <code>true</code>, the acceleration of the drivetrain is exponential, as opposed to linear.
-	 */
-	private void toggleSpeedSensitivity()
-	{
-		lastSSTime = System.currentTimeMillis();
-		isSensitiveAtSlowSpeeds = !isSensitiveAtSlowSpeeds;
-		drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
-	}
-	
-	/**
 	 * Writes a line of text to the User Messages section of the Driver Station.
 	 * Lines of text are aligned left and may not be longer that 21 characters.
 	 * @param text The text to be written to the User Messages box. This String may not be longer than 21 characters.
@@ -302,14 +278,13 @@ public class Robot extends SimpleRobot
 		lcd.println(Line.kUser1, 0, "Welcome, Neil! C:");
 		lcd.println(Line.kUser2, 0, (isInverted) ? "Motors are inverted. Shooter is front." 
 																						 : "Motors are normal. Pick-up is front.");
-		lcd.println(Line.kUser3, 0, (isSensitiveAtSlowSpeeds) ? "Acc. Curve: Exponential. Not sensitive at slow speeds." 
-																													: "Acc. Curve: Linear. Sensitive at slow speeds.");
-		lcd.println(Line.kUser4, 0, (isCameraUp) ? "Camera: Up. View is the field."
+		lcd.println(Line.kUser3, 0, (isCameraUp) ? "Camera: Up. View is the field."
 																						 : "Camera: Down. View is the arm.");
 		double left = leftSensor.getRangeInches();
 		double right = rightSensor.getRangeInches();
 		double average = (left + right) / 2.0;
-		lcd.println(Line.kUser5, 0, "LS: " + left + "   RS: " + right + "   Avg: " + average);
+		lcd.println(Line.kUser4, 0, "LS: " + left + "   RS: " + right);
+		lcd.println(Line.kUser5, 0, "Average: " + average);
 		/**
 		 * Implement something here to say "You can shoot!", "You should 
 		 * probably get closer.", and "You might want to back up."
