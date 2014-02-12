@@ -62,7 +62,7 @@ public class Robot extends SimpleRobot
   /* Joystick USB Ports */ /* XXX: This may vary on different computers at different times */
   public final int kLeftJoystick = 1;
   public final int kRightJoystick = 2;
-	public final double LIFT_SPEED = 0.25;
+	public final double LIFT_SPEED = 0.40;
 	
 	// Other constants
 	public final int[] PING_CHANNELS = {1, 3};
@@ -107,7 +107,7 @@ public class Robot extends SimpleRobot
   private final DoubleSolenoid leftSolenoid, rightSolenoid;
 	private final Joystick leftStick, rightStick;
 	private final DriverStationLCD lcd;
-  private final Ultrasonic leftSensor, rightSensor;
+//  private final Ultrasonic leftSensor, rightSensor;
 	
   public Robot()
 	{
@@ -150,12 +150,12 @@ public class Robot extends SimpleRobot
 		compressor.start();
 
 		//Sets up ultrasonic sensors
-    leftSensor = new Ultrasonic(PING_CHANNELS[0], ECHO_CHANNELS[0]);
-		leftSensor.setEnabled(true);
-		leftSensor.setAutomaticMode(true);
-    rightSensor = new Ultrasonic(PING_CHANNELS[1], ECHO_CHANNELS[1]);
-		rightSensor.setEnabled(true);
-		rightSensor.setAutomaticMode(true);
+//    leftSensor = new Ultrasonic(PING_CHANNELS[0], ECHO_CHANNELS[0]);
+//		leftSensor.setEnabled(true);
+//		leftSensor.setAutomaticMode(true);
+//    rightSensor = new Ultrasonic(PING_CHANNELS[1], ECHO_CHANNELS[1]);
+//		rightSensor.setEnabled(true);
+//		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
 		lcd = DriverStationLCD.getInstance();
@@ -275,6 +275,7 @@ public class Robot extends SimpleRobot
 	 */
 	private void toggleCameraAngle()
 	{
+		lastAngleTime = System.currentTimeMillis();
 		if(isCameraUp)
 		{
 			cameraServo.set(cameraAngle[0]);
@@ -286,6 +287,8 @@ public class Robot extends SimpleRobot
 			writeToLCD("Camera view is the field");
 		}
 		isCameraUp = !isCameraUp;
+		System.out.println(cameraAngle[0] + ", " + cameraAngle[1]);
+		System.out.println("isCameraUp: " + isCameraUp);
 	}
 	
 	/**
@@ -294,6 +297,7 @@ public class Robot extends SimpleRobot
 	 */
 	private void toggleSpeedSensitivity()
 	{
+		lastSSTime = System.currentTimeMillis();
 		isSensitiveAtSlowSpeeds = !isSensitiveAtSlowSpeeds;
 		drivetrain.tankDrive(leftStick, rightStick, isSensitiveAtSlowSpeeds);
 		if (isSensitiveAtSlowSpeeds)
@@ -306,7 +310,6 @@ public class Robot extends SimpleRobot
 			writeToLCD("The acceleration curve is linear.");
 			writeToLCD("The joysticks will be sensitive at slow speeds.");
 		}
-		
 	}
 	
 	/**
@@ -316,24 +319,24 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD(String text)
 	{
-		if (lcdLine < 6)
-		{
-			lcd.println(line[lcdLine], 1, text);
-			lcdLines[lcdLine] = text;
-			lcdLine++;
-			lcd.updateLCD();
-		}
-		else
-		{
-			lcd.clear();
-			for (int i = 1; i < 6; i++)
-			{
-				lcd.println(line[i-1], 1, lcdLines[i]);
-				lcdLines[i-1] = lcdLines[i];
-			}
-			lcdLines[5] = text;
-			lcd.println(line[5], 1, text);
-		}
+	//	if (lcdLine < 6)
+	//	{
+	//		lcd.println(line[lcdLine], 1, text);
+	//		lcdLines[lcdLine] = text;
+	//		lcdLine++;
+	//		lcd.updateLCD();
+	//	}
+	//	else
+	//	{
+	//		lcd.clear();
+	//		for (int i = 1; i < 6; i++)
+	//		{
+	//			lcd.println(line[i-1], 1, lcdLines[i]);
+	//			lcdLines[i-1] = lcdLines[i];
+	//		}
+	//		lcdLines[5] = text;
+	//		lcd.println(line[5], 1, text);
+	//	}
 	}
 	
 	
@@ -342,12 +345,12 @@ public class Robot extends SimpleRobot
 	 * average of the two sensor readings.
 	 * @return The distance value as a double, rounded to 2 decimal places.
 	 */
-	private double measureDistances()
-	{
+//	private double measureDistances()
+//	{
 		//I should really use the FRC Dashboard to implement this
-		double leftRange = leftSensor.getRangeInches();
-		double rightRange = rightSensor.getRangeInches();
-		double range = (leftRange + rightRange)/2;
+//		double leftRange = leftSensor.getRangeInches();
+//		double rightRange = rightSensor.getRangeInches();
+//		double range = (leftRange + rightRange)/2;
 //		String r = Double.toString(range);
 //		String[] separated = r.split(".");
 //		String end = separated[0] + ".";
@@ -357,6 +360,6 @@ public class Robot extends SimpleRobot
 //			end += separated[1].charAt(1);
 //		}
 //		return Double.parseDouble(end); 
-		return range;
-	}
+//		return range;
+//	}
 }
