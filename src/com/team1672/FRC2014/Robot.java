@@ -145,11 +145,11 @@ public class Robot extends SimpleRobot
 
 		//Sets up ultrasonic sensors
     leftSensor = new Ultrasonic(PING_CHANNELS[0], PONG_CHANNELS[0]);
+//		leftSensor.setAutomaticMode(true);
 		leftSensor.setEnabled(true);
-		leftSensor.setAutomaticMode(true);
     rightSensor = new Ultrasonic(PING_CHANNELS[1], PONG_CHANNELS[1]);
+//		rightSensor.setAutomaticMode(true);
 		rightSensor.setEnabled(true);
-		rightSensor.setAutomaticMode(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
 		lcd = DriverStationLCD.getInstance();
@@ -275,16 +275,16 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD()
 	{
-		lcd.println(Line.kUser1, 0, "Welcome, Neil! C:");
-		lcd.println(Line.kUser2, 0, (isInverted) ? "Motors are inverted. Shooter is front." 
-																						 : "Motors are normal. Pick-up is front.");
-		lcd.println(Line.kUser3, 0, (isCameraUp) ? "Camera: Up. View is the field."
-																						 : "Camera: Down. View is the arm.");
+		lcd.println(Line.kUser1, 1, "Welcome, Neil! C:");
+		lcd.println(Line.kUser2, 1, (isInverted) ? "M:Inverted F:Shooter" 
+																						 : "M:Normal   F:Pick-up");
+		lcd.println(Line.kUser3, 1, (isCameraUp) ? "Camera:Up View:Field"
+																						 : "Camera:Dwn View:Arm");
 		double left = leftSensor.getRangeInches();
 		double right = rightSensor.getRangeInches();
 		double average = (left + right) / 2.0;
-		lcd.println(Line.kUser4, 0, "LS: " + left + "   RS: " + right);
-		lcd.println(Line.kUser5, 0, "Average: " + average);
+		lcd.println(Line.kUser4, 1, "LS: " + left + "   RS: " + right);
+		lcd.println(Line.kUser5, 1, "Average: " + average);
 		/**
 		 * Implement something here to say "You can shoot!", "You should 
 		 * probably get closer.", and "You might want to back up."
@@ -292,5 +292,6 @@ public class Robot extends SimpleRobot
 		 * lcd.println(Line.kUser6, 0, text);
 		 * 
 		 */
+		lcd.updateLCD();
 	}	
 }
