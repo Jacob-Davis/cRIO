@@ -1,6 +1,6 @@
 /*
     SARCS - Semi-Automatic Robot Control System
-    v1.1 'junefire'
+    v1.3 'violettime'
 
     This code is to be run on the cRIO.
 
@@ -44,18 +44,28 @@ public class Robot extends SimpleRobot
   private long lastReverseTime;
 	private long lastSSTime;
 	private long lastSwitchTime;
+	private long lastFiredTime;
   private boolean isCompressorOn;
   private boolean isInverted;
 	private boolean isCameraUp;
+	
+	/**
+	 * Array of 2 or more distances obtained from ultrasonic sensors each loop, in inches.
+	 */
+	protected double[] ultrasonicDistances;
 	
   /* Buttons */
   public final int FIRE_BUTTON = 1;
   public final int LIFT_UP_BUTTON = 3;
   public final int LIFT_DOWN_BUTTON = 2;
   public final int CAMERA_TOGGLE = 3;
-  public final int COMPRESSOR_BUTTON = 5;
 	
-  /* Joystick USB Ports */ /* XXX: This may vary on different computers at different times */
+	//Deprecated.
+  //public final int COMPRESSOR_BUTTON = 5;
+	
+	public final int AUTO_ALIGN_BUTTON = 4; //Left stick only
+	
+  /* Joystick USB Ports */
   public final int kLeftJoystick = 1;
   public final int kRightJoystick = 2;
 	public final double LIFT_SPEED = 0.40;
@@ -73,6 +83,10 @@ public class Robot extends SimpleRobot
 																								RobotDrive.MotorType.kFrontRight,
 																								RobotDrive.MotorType.kRearLeft,
 																								RobotDrive.MotorType.kRearRight};
+	
+	//Speeds when operating automatically
+	protected double leftDriveSpeed, rightDriveSpeed;
+	protected boolean notAligned;
 	
 	/* Relays (off of Digital Sidecar) */
   public final int kCompressor = 1;
@@ -105,6 +119,12 @@ public class Robot extends SimpleRobot
 	private final DriverStationLCD lcd;
   private final Ultrasonic leftSensor, rightSensor;
 	
+	//Really important automatic constants.
+	public final double SHOOTING_DISTANCE = 35; //in inches
+	public final double SHOOTING_DISTANCE_TOLERANCE = 0.5; //in inches
+	public final double AUTO_ALIGN_SPEED = 0.1; //from -1 to 1
+	public final double AUTONOMOUS_MODE_SPEED = 0.5; //from -1 to 1
+	
   public Robot()
 	{
 		//Initializes functionality variables
@@ -114,6 +134,16 @@ public class Robot extends SimpleRobot
 		lastSwitchTime = 0;
 	  isCompressorOn = false;
 	  isInverted = false;
+		lastFiredTime = 0L;
+		
+		ultrasonicDistances = new double[2];
+		ultrasonicDistances[0] = 0D;
+		ultrasonicDistances[1] = 0D;
+		
+		//Initialized automatic functionality variables
+		leftDriveSpeed = 0D;
+		rightDriveSpeed = 0D;
+		notAligned = true;
 
 		//Sets up driving mechanisms (joysticks and drivetrain)
     leftStick = new Joystick(kLeftJoystick);
@@ -157,13 +187,16 @@ public class Robot extends SimpleRobot
 
 	public void autonomous() 
 	{
-	  /* TODO: Implement autonomous. */
-		System.out.println("Autonomous mode enabled.");
+		System.out.println("Now in auto mode.");
+		
+		while(isEnabled() && notAligned) {
+			autoAlign();
+		}
 	}
 
 	public void operatorControl() 
 	{
-	  System.out.println("Teleoperation enabled");
+	  System.out.println("Now in driver mode.");
 		drivetrain.setSafetyEnabled(false);
 		lift.setSafetyEnabled(false);
 		
@@ -173,7 +206,15 @@ public class Robot extends SimpleRobot
 	
 		while(this.isOperatorControl() && this.isEnabled()) 
 		{
-			drivetrain.tankDrive(leftStick, rightStick);
+			storeUltrasonicDistances();
+			
+			//Automatic alignment control
+			if(leftStick.getRawButton(AUTO_ALIGN_BUTTON)) {
+				autoAlign();
+			}
+			else {
+				drivetrain.tankDrive(leftStick, rightStick);
+			}
 			
 			/* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
 		   * it has a value on the interval [-1, 1], where -1 is physically 
@@ -194,32 +235,36 @@ public class Robot extends SimpleRobot
 			else
 				lift.set(0);
 			
-	    /**
-			 * Solenoid controls
-			 * NOTE: Swapping the wire plugs on the cRIO will reverse this functionality!
-			 * Be careful!
+	    
+			long timeSinceLastFire = System.currentTimeMillis() - lastFiredTime;
+			
+			/**
+			 * Solenoid control. WARNING: Swapping the wire plugs on the cRIO will break this! Be careful!
 			 */
-		  if(rightStick.getRawButton(FIRE_BUTTON))
+			
+		  if(rightStick.getRawButton(FIRE_BUTTON) && timeSinceLastFire > 2000)
 			{
 				leftSolenoid.set(DoubleSolenoid.Value.kForward);
 	      rightSolenoid.set(DoubleSolenoid.Value.kForward);
+				lastFiredTime = System.currentTimeMillis();
 			}
-			else if(leftStick.getRawButton(FIRE_BUTTON))
-			{
+			
+			
+			if(timeSinceLastFire > 500 && timeSinceLastFire < 1000) {
 				leftSolenoid.set(DoubleSolenoid.Value.kReverse);
-			  rightSolenoid.set(DoubleSolenoid.Value.kReverse);
-			}
-	    else
-			{
+				rightSolenoid.set(DoubleSolenoid.Value.kReverse);
+			} else if (timeSinceLastFire > 1000) {
 				leftSolenoid.set(DoubleSolenoid.Value.kOff);
-	      rightSolenoid.set(DoubleSolenoid.Value.kOff);
+				rightSolenoid.set(DoubleSolenoid.Value.kOff);
 			}
+			
+			
 		
 			//Camera control (up/down toggle)
-			if(leftStick.getRawButton(CAMERA_TOGGLE) && (System.currentTimeMillis() - lastAngleTime) >= 250) 
+			if(leftStick.getRawButton(CAMERA_TOGGLE) && (System.currentTimeMillis() - lastAngleTime) >= 500) 
 				toggleCameraAngle();
 			//Motor inversion control
-		  if(rightStick.getRawButton(11) && (System.currentTimeMillis() - lastReverseTime) >= 250)
+		  if(rightStick.getRawButton(11) && (System.currentTimeMillis() - lastReverseTime) >= 500)
 			  invertMotors();
 			
 			//Push real-time information to Driver Station LCD (User Messages section)
@@ -240,6 +285,56 @@ public class Robot extends SimpleRobot
 	public void disabled() 
 	{
 		System.out.println("Robot is disabled");
+	}
+	
+	/**
+	 * Run repeatedly to align the robot.
+	 */
+	public void autoAlign() {
+		
+		double leftDistanceFromPerfect = Math.abs(ultrasonicDistances[0] - SHOOTING_DISTANCE);
+		double rightDistanceFromPerfect = Math.abs(ultrasonicDistances[1] - SHOOTING_DISTANCE);
+		
+		if(ultrasonicDistances[0] > SHOOTING_DISTANCE) {
+			leftDriveSpeed = AUTO_ALIGN_SPEED;
+		}
+		else if(ultrasonicDistances[0] < SHOOTING_DISTANCE) {
+			leftDriveSpeed = -AUTO_ALIGN_SPEED;
+		}
+		else {
+			System.out.println("There was a problem auto-aligning! (1)");
+			leftDriveSpeed = 0;
+		}
+		
+		if(ultrasonicDistances[1] > SHOOTING_DISTANCE) {
+			rightDriveSpeed = AUTO_ALIGN_SPEED;
+		}
+		else if(ultrasonicDistances[1] < SHOOTING_DISTANCE) {
+			rightDriveSpeed = -AUTO_ALIGN_SPEED;
+		}
+		else {
+			System.out.println("There was a problem auto-aligning! (2)");
+			rightDriveSpeed = 0;
+		}
+		
+		if(leftDistanceFromPerfect < SHOOTING_DISTANCE_TOLERANCE) {
+			leftDriveSpeed = 0;
+		}
+		if(rightDistanceFromPerfect < SHOOTING_DISTANCE_TOLERANCE) {
+			rightDriveSpeed = 0;
+		}
+		
+		if(leftDriveSpeed == 0D && rightDriveSpeed == 0D) {
+			notAligned = false;
+		}
+		
+		drivetrain.setLeftRightMotorOutputs(leftDriveSpeed, rightDriveSpeed);
+		
+	}
+	
+	public void storeUltrasonicDistances() {
+		ultrasonicDistances[0] = leftSensor.getRangeInches();
+		ultrasonicDistances[1] = rightSensor.getRangeInches();
 	}
 	
 	/**
@@ -275,23 +370,18 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD()
 	{
-		lcd.println(Line.kUser1, 1, "Welcome, Neil! C:");
+		lcd.println(Line.kUser1, 1, "Hi Neil! :3 SARCS 1.3");
 		lcd.println(Line.kUser2, 1, (isInverted) ? "M:Inverted F:Shooter" 
 																						 : "M:Normal   F:Pick-up");
 		lcd.println(Line.kUser3, 1, (isCameraUp) ? "Camera:Up View:Field"
 																						 : "Camera:Dwn View:Arm");
-		double left = leftSensor.getRangeInches();
-		double right = rightSensor.getRangeInches();
-		double average = (left + right) / 2.0;
+		double left = Math.floor(leftSensor.getRangeInches() * 1000) / 1000D;
+		double right = Math.floor(rightSensor.getRangeInches() * 1000) / 1000D;
+		double average = Math.floor(((left + right) / 2D) * 1000) / 1000D;
 		lcd.println(Line.kUser4, 1, "LS: " + left + "   RS: " + right);
 		lcd.println(Line.kUser5, 1, "Average: " + average);
-		/**
-		 * Implement something here to say "You can shoot!", "You should 
-		 * probably get closer.", and "You might want to back up."
-		 * 
-		 * lcd.println(Line.kUser6, 0, text);
-		 * 
-		 */
+		lcd.println(Line.kUser6, 1, "http://team1672.com");
+						
 		lcd.updateLCD();
 	}	
 }
