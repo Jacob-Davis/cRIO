@@ -26,6 +26,8 @@ package com.team1672.FRC2014;
  * Gets the goodies.
  */
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.DriverStationLCD.Line;
@@ -127,6 +129,7 @@ public class Robot extends SimpleRobot
 	
   public Robot()
 	{
+		
 		//Initializes functionality variables
 	  lastAngleTime = 0;
 	  lastReverseTime = 0;
@@ -175,10 +178,8 @@ public class Robot extends SimpleRobot
 
 		//Sets up ultrasonic sensors
     leftSensor = new Ultrasonic(PING_CHANNELS[0], PONG_CHANNELS[0]);
-//		leftSensor.setAutomaticMode(true);
 		leftSensor.setEnabled(true);
     rightSensor = new Ultrasonic(PING_CHANNELS[1], PONG_CHANNELS[1]);
-//		rightSensor.setAutomaticMode(true);
 		rightSensor.setEnabled(true);
 		
 		//Sets up Driver Station LCD (User Messages section)
@@ -200,12 +201,15 @@ public class Robot extends SimpleRobot
 		drivetrain.setSafetyEnabled(false);
 		lift.setSafetyEnabled(false);
 		
+		
+		
 		//Initial solenoid maintenance
 		leftSolenoid.set(DoubleSolenoid.Value.kOff);
 		rightSolenoid.set(DoubleSolenoid.Value.kOff);
 	
 		while(this.isOperatorControl() && this.isEnabled()) 
 		{
+				
 			storeUltrasonicDistances();
 			
 			//Automatic alignment control
@@ -241,7 +245,6 @@ public class Robot extends SimpleRobot
 			/**
 			 * Solenoid control. WARNING: Swapping the wire plugs on the cRIO will break this! Be careful!
 			 */
-			
 		  if(rightStick.getRawButton(FIRE_BUTTON) && timeSinceLastFire > 2000)
 			{
 				leftSolenoid.set(DoubleSolenoid.Value.kForward);
@@ -335,6 +338,10 @@ public class Robot extends SimpleRobot
 	public void storeUltrasonicDistances() {
 		ultrasonicDistances[0] = leftSensor.getRangeInches();
 		ultrasonicDistances[1] = rightSensor.getRangeInches();
+		for (int i = 0; i < 2; i++)
+		{
+			System.out.println(i + ": " + ultrasonicDistances[i]);
+		}
 	}
 	
 	/**
@@ -370,7 +377,7 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD()
 	{
-		lcd.println(Line.kUser1, 1, "Hi Neil! :3 SARCS 1.3");
+		lcd.println(Line.kUser1, 1, "Hi Neil! C: SARCS 1.3");
 		lcd.println(Line.kUser2, 1, (isInverted) ? "M:Inverted F:Shooter" 
 																						 : "M:Normal   F:Pick-up");
 		lcd.println(Line.kUser3, 1, (isCameraUp) ? "Camera:Up View:Field"
