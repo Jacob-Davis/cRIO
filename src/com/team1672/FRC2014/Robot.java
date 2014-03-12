@@ -38,6 +38,7 @@ import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.SimpleRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
 
 public class Robot extends SimpleRobot
@@ -60,14 +61,16 @@ public class Robot extends SimpleRobot
 	
   /* Buttons */
   public final int FIRE_BUTTON = 1;
-  public final int LIFT_UP_BUTTON = 3;
-  public final int LIFT_DOWN_BUTTON = 2;
+  public final int LIFT_UP_BUTTON = 3; //Right stick only
+  public final int LIFT_DOWN_BUTTON = 2; //Right stick only
   public final int CAMERA_TOGGLE = 3;
 	
 	//Deprecated.
   //public final int COMPRESSOR_BUTTON = 5;
 	
-	public final int AUTO_ALIGN_BUTTON = 4; //Left stick only
+	public final int SLOW_BUTTON = 4;
+	public final int SLOW_BUTTON_2 = 5;
+	public final int AUTO_ALIGN_BUTTON = 2; //Left stick only
 	
   /* Joystick USB Ports */
   public final int kLeftJoystick = 1;
@@ -125,9 +128,10 @@ public class Robot extends SimpleRobot
 	private final AnalogChannel maxBotix;
 	
 	//Really important automatic constants.
-	public final double SHOOTING_DISTANCE = 35; //in inches
+	public final double SHOOTING_DISTANCE = 36; //in inches
 	public final double SHOOTING_DISTANCE_TOLERANCE = 0.5; //in inches
-	public final double AUTO_ALIGN_SPEED = 0.1; //from -1 to 1
+	public final double AUTO_ALIGN_SPEED = 0.45; //from -1 to 1
+	public final double SLOW_SPEED = 0.15;
 	public final double AUTONOMOUS_MODE_SPEED = 0.5; //from -1 to 1
 	
   public Robot()
@@ -194,10 +198,35 @@ public class Robot extends SimpleRobot
 	public void autonomous() 
 	{
 		System.out.println("Now in auto mode.");
-		
+		notAligned = true;
+		storeUltrasonicDistances();
+		long startTime = System.currentTimeMillis();
 		while(isEnabled() && notAligned) {
-			autoAlign();
+			storeUltrasonicDistances();
+			writeToLCD();
+			if(System.currentTimeMillis() - startTime < 500) {
+				lift.set(LIFT_SPEED);
+			} else {
+				lift.set(0);
+			}
+			if(USE_MAX_BOTIX) {
+				autoAlignMaxBotix();
+			}else {
+				autoAlign();
+			}
 		}
+		
+		drivetrain.setLeftRightMotorOutputs(0, 0);
+		
+		leftSolenoid.set(DoubleSolenoid.Value.kForward);
+	  rightSolenoid.set(DoubleSolenoid.Value.kForward);
+		Timer.delay(1);
+		leftSolenoid.set(DoubleSolenoid.Value.kReverse);
+		rightSolenoid.set(DoubleSolenoid.Value.kReverse);
+		Timer.delay(1);
+		leftSolenoid.set(DoubleSolenoid.Value.kOff);
+		rightSolenoid.set(DoubleSolenoid.Value.kOff);
+				
 	}
 
 	public void operatorControl() 
@@ -218,11 +247,19 @@ public class Robot extends SimpleRobot
 			storeUltrasonicDistances();
 			
 			//Automatic alignment control
-			if(leftStick.getRawButton(AUTO_ALIGN_BUTTON)) {
-				autoAlign();
-			}
-			else {
-				drivetrain.tankDrive(leftStick, rightStick);
+			if(leftStick.getRawButton(AUTO_ALIGN_BUTTON) && notAligned == true) {
+				if(USE_MAX_BOTIX) {
+					autoAlignMaxBotix();
+				} else {
+					autoAlign();
+				}
+			} else if(leftStick.getRawButton(SLOW_BUTTON)) {
+					drivetrain.setLeftRightMotorOutputs(-SLOW_SPEED, -SLOW_SPEED);
+			} else if(leftStick.getRawButton(SLOW_BUTTON_2)) {
+					drivetrain.setLeftRightMotorOutputs(SLOW_SPEED, SLOW_SPEED);
+			} else {
+					drivetrain.tankDrive(leftStick, rightStick);
+					notAligned = true;
 			}
 			
 			/* Z-axis is the throttle lever on the Logitech Attack 3 joystick;
@@ -289,6 +326,21 @@ public class Robot extends SimpleRobot
 	public void disabled() 
 	{
 		System.out.println("Robot is disabled");
+	}
+	
+	public void autoAlignMaxBotix() {
+		double distance = isAutonomous() ? SHOOTING_DISTANCE + 6 : SHOOTING_DISTANCE; 
+		
+		if(ultrasonicDistances[0] < SHOOTING_DISTANCE) {
+			drivetrain.setLeftRightMotorOutputs(AUTO_ALIGN_SPEED, AUTO_ALIGN_SPEED);
+		}
+		else if (ultrasonicDistances[0] > SHOOTING_DISTANCE) {
+			drivetrain.setLeftRightMotorOutputs(-AUTO_ALIGN_SPEED, -AUTO_ALIGN_SPEED);
+		}
+		
+		if(Math.abs(ultrasonicDistances[0] - SHOOTING_DISTANCE) < SHOOTING_DISTANCE_TOLERANCE) {
+			notAligned = false;
+		}
 	}
 	
 	/**
