@@ -204,11 +204,13 @@ public class Robot extends SimpleRobot
 		while(isEnabled() && notAligned) {
 			storeUltrasonicDistances();
 			writeToLCD();
+			/*
 			if(System.currentTimeMillis() - startTime < 500) {
 				lift.set(LIFT_SPEED);
 			} else {
 				lift.set(0);
 			}
+			*/
 			if(USE_MAX_BOTIX) {
 				autoAlignMaxBotix();
 			}else {
@@ -329,16 +331,16 @@ public class Robot extends SimpleRobot
 	}
 	
 	public void autoAlignMaxBotix() {
-		double distance = isAutonomous() ? SHOOTING_DISTANCE + 6 : SHOOTING_DISTANCE; 
+		double distance = isAutonomous() ? SHOOTING_DISTANCE + 12 : SHOOTING_DISTANCE; 
 		
-		if(ultrasonicDistances[0] < SHOOTING_DISTANCE) {
+		if(ultrasonicDistances[0] < distance) {
 			drivetrain.setLeftRightMotorOutputs(AUTO_ALIGN_SPEED, AUTO_ALIGN_SPEED);
 		}
-		else if (ultrasonicDistances[0] > SHOOTING_DISTANCE) {
+		else if (ultrasonicDistances[0] > distance) {
 			drivetrain.setLeftRightMotorOutputs(-AUTO_ALIGN_SPEED, -AUTO_ALIGN_SPEED);
 		}
 		
-		if(Math.abs(ultrasonicDistances[0] - SHOOTING_DISTANCE) < SHOOTING_DISTANCE_TOLERANCE) {
+		if(Math.abs(ultrasonicDistances[0] - distance) < SHOOTING_DISTANCE_TOLERANCE) {
 			notAligned = false;
 		}
 	}
