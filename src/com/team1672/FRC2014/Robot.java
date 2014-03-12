@@ -1,6 +1,6 @@
 /*
     SARCS - Semi-Automatic Robot Control System
-    v1.3 'violettime'
+    v1.4 zeroquarter'
 
     This code is to be run on the cRIO.
 
@@ -25,6 +25,7 @@ package com.team1672.FRC2014;
 /**
  * Gets the goodies.
  */
+import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
@@ -50,6 +51,7 @@ public class Robot extends SimpleRobot
   private boolean isCompressorOn;
   private boolean isInverted;
 	private boolean isCameraUp;
+	public final boolean USE_MAX_BOTIX = true;
 	
 	/**
 	 * Array of 2 or more distances obtained from ultrasonic sensors each loop, in inches.
@@ -120,6 +122,7 @@ public class Robot extends SimpleRobot
 	private final Joystick leftStick, rightStick;
 	private final DriverStationLCD lcd;
   private final Ultrasonic leftSensor, rightSensor;
+	private final AnalogChannel maxBotix;
 	
 	//Really important automatic constants.
 	public final double SHOOTING_DISTANCE = 35; //in inches
@@ -157,6 +160,8 @@ public class Robot extends SimpleRobot
                                 kDrivetrain[3]);
 	  invertMotors();
 	  
+		maxBotix = new AnalogChannel(2);
+		
 		//Sets up lift mechanism motor
     lift = new Jaguar(kLift);
 		
@@ -336,11 +341,12 @@ public class Robot extends SimpleRobot
 	}
 	
 	public void storeUltrasonicDistances() {
-		ultrasonicDistances[0] = leftSensor.getRangeInches();
-		ultrasonicDistances[1] = rightSensor.getRangeInches();
-		for (int i = 0; i < 2; i++)
-		{
-			System.out.println(i + ": " + ultrasonicDistances[i]);
+		if(USE_MAX_BOTIX) {
+			ultrasonicDistances[0] = getMaxBotixInches();
+			ultrasonicDistances[1] = 0;
+		} else {
+			ultrasonicDistances[0] = leftSensor.getRangeInches();
+			ultrasonicDistances[1] = rightSensor.getRangeInches();
 		}
 	}
 	
@@ -357,6 +363,11 @@ public class Robot extends SimpleRobot
 			drivetrain.setInvertedMotor(motors[i], isInverted);
 	}
 	
+	public double getMaxBotixInches() {
+			int reading = maxBotix.getValue();
+			System.out.println("Voltage: " + maxBotix.getVoltage() + "\n Reading: " + reading);
+			return 1.851190476 * reading + 0.2916666666;
+	}
 	/**
 	 * Toggles the angle of the axis camera. The camera can either be up or down.
 	 */
@@ -382,8 +393,8 @@ public class Robot extends SimpleRobot
 																						 : "M:Normal   F:Pick-up");
 		lcd.println(Line.kUser3, 1, (isCameraUp) ? "Camera:Up View:Field"
 																						 : "Camera:Dwn View:Arm");
-		double left = Math.floor(leftSensor.getRangeInches() * 1000) / 1000D;
-		double right = Math.floor(rightSensor.getRangeInches() * 1000) / 1000D;
+		double left = Math.floor(ultrasonicDistances[0] * 1000) / 1000D;
+		double right = Math.floor(ultrasonicDistances[1] * 1000) / 1000D;
 		double average = Math.floor(((left + right) / 2D) * 1000) / 1000D;
 		lcd.println(Line.kUser4, 1, "LS: " + left + "   RS: " + right);
 		lcd.println(Line.kUser5, 1, "Average: " + average);
