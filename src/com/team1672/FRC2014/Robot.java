@@ -250,18 +250,14 @@ public class Robot extends SimpleRobot
 			/**
 			 * Solenoid control. WARNING: Swapping the wire plugs on the cRIO will break this! Be careful!
 			 */
-		  if(rightStick.getRawButton(FIRE_BUTTON) && timeSinceLastFire > 2000)
+		  if(rightStick.getRawButton(FIRE_BUTTON))
 			{
 				leftSolenoid.set(DoubleSolenoid.Value.kForward);
 	      rightSolenoid.set(DoubleSolenoid.Value.kForward);
-				lastFiredTime = System.currentTimeMillis();
-			}
-			
-			
-			if(timeSinceLastFire > 500 && timeSinceLastFire < 1000) {
+			} else if(leftStick.getRawButton(FIRE_BUTTON)) {
 				leftSolenoid.set(DoubleSolenoid.Value.kReverse);
 				rightSolenoid.set(DoubleSolenoid.Value.kReverse);
-			} else if (timeSinceLastFire > 1000) {
+			} else {
 				leftSolenoid.set(DoubleSolenoid.Value.kOff);
 				rightSolenoid.set(DoubleSolenoid.Value.kOff);
 			}
@@ -366,7 +362,7 @@ public class Robot extends SimpleRobot
 	public double getMaxBotixInches() {
 			int reading = maxBotix.getValue();
 			System.out.println("Voltage: " + maxBotix.getVoltage() + "\n Reading: " + reading);
-			return 1.851190476 * reading + 0.2916666666;
+			return  (reading - 0.2916666666) / 1.851190476D;
 	}
 	/**
 	 * Toggles the angle of the axis camera. The camera can either be up or down.
