@@ -130,7 +130,7 @@ public class Robot extends SimpleRobot
 	//Really important automatic constants.
 	public final double SHOOTING_DISTANCE = 36; //in inches
 	public final double SHOOTING_DISTANCE_TOLERANCE = 0.5; //in inches
-	public final double AUTO_ALIGN_SPEED = 0.45; //from -1 to 1
+	public final double AUTO_ALIGN_MIN_SPEED = 0.15; //from -1 to 1
 	public final double SLOW_SPEED = 0.15;
 	public final double AUTONOMOUS_MODE_SPEED = 0.5; //from -1 to 1
 	
@@ -200,7 +200,7 @@ public class Robot extends SimpleRobot
 		System.out.println("Now in auto mode.");
 		notAligned = true;
 		storeUltrasonicDistances();
-		long startTime = System.currentTimeMillis();
+		//long startTime = System.currentTimeMillis();
 		while(isEnabled() && notAligned) {
 			storeUltrasonicDistances();
 			writeToLCD();
@@ -255,7 +255,7 @@ public class Robot extends SimpleRobot
 				} else {
 					autoAlign();
 				}
-			} else if(leftStick.getRawButton(SLOW_BUTTON)) {
+			} else if(leftStick.getRawButton(SLOW_BUTTON)				) {
 					drivetrain.setLeftRightMotorOutputs(-SLOW_SPEED, -SLOW_SPEED);
 			} else if(leftStick.getRawButton(SLOW_BUTTON_2)) {
 					drivetrain.setLeftRightMotorOutputs(SLOW_SPEED, SLOW_SPEED);
@@ -327,20 +327,19 @@ public class Robot extends SimpleRobot
 
 	public void disabled() 
 	{
-		System.out.println("Robot is disabled");
+		System.out.println("Robot is connected and disabled.");
 	}
 	
 	public void autoAlignMaxBotix() {
-		double distance = isAutonomous() ? SHOOTING_DISTANCE + 12 : SHOOTING_DISTANCE; 
 		
-		if(ultrasonicDistances[0] < distance) {
-			drivetrain.setLeftRightMotorOutputs(AUTO_ALIGN_SPEED, AUTO_ALIGN_SPEED);
+		if(ultrasonicDistances[0] < SHOOTING_DISTANCE) {
+			drivetrain.setLeftRightMotorOutputs(AUTO_ALIGN_MIN_SPEED, AUTO_ALIGN_MIN_SPEED);
 		}
-		else if (ultrasonicDistances[0] > distance) {
-			drivetrain.setLeftRightMotorOutputs(-AUTO_ALIGN_SPEED, -AUTO_ALIGN_SPEED);
+		else if (ultrasonicDistances[0] > SHOOTING_DISTANCE) {
+			drivetrain.setLeftRightMotorOutputs(-0.3, -0.3);
 		}
 		
-		if(Math.abs(ultrasonicDistances[0] - distance) < SHOOTING_DISTANCE_TOLERANCE) {
+		if(Math.abs(ultrasonicDistances[0] - SHOOTING_DISTANCE) < SHOOTING_DISTANCE_TOLERANCE) {
 			notAligned = false;
 		}
 	}
@@ -354,10 +353,10 @@ public class Robot extends SimpleRobot
 		double rightDistanceFromPerfect = Math.abs(ultrasonicDistances[1] - SHOOTING_DISTANCE);
 		
 		if(ultrasonicDistances[0] > SHOOTING_DISTANCE) {
-			leftDriveSpeed = AUTO_ALIGN_SPEED;
+			leftDriveSpeed = AUTO_ALIGN_MIN_SPEED;
 		}
 		else if(ultrasonicDistances[0] < SHOOTING_DISTANCE) {
-			leftDriveSpeed = -AUTO_ALIGN_SPEED;
+			leftDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
 		}
 		else {
 			System.out.println("There was a problem auto-aligning! (1)");
@@ -365,10 +364,10 @@ public class Robot extends SimpleRobot
 		}
 		
 		if(ultrasonicDistances[1] > SHOOTING_DISTANCE) {
-			rightDriveSpeed = AUTO_ALIGN_SPEED;
+			rightDriveSpeed = AUTO_ALIGN_MIN_SPEED;
 		}
 		else if(ultrasonicDistances[1] < SHOOTING_DISTANCE) {
-			rightDriveSpeed = -AUTO_ALIGN_SPEED;
+			rightDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
 		}
 		else {
 			System.out.println("There was a problem auto-aligning! (2)");
