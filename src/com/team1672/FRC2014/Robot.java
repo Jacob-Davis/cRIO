@@ -128,7 +128,7 @@ public class Robot extends SimpleRobot
 	private final AnalogChannel maxBotix;
 	
 	//Really important automatic constants.
-	public final double SHOOTING_DISTANCE = 36; //in inches
+	public final double SHOOTING_DISTANCE = 60; //in inches
 	public final double SHOOTING_DISTANCE_TOLERANCE = 0.5; //in inches
 	public final double AUTO_ALIGN_MIN_SPEED = 0.15; //from -1 to 1
 	public final double SLOW_SPEED = 0.15;
@@ -201,9 +201,10 @@ public class Robot extends SimpleRobot
 		notAligned = true;
 		storeUltrasonicDistances();
 		//long startTime = System.currentTimeMillis();
-		while(isEnabled() && notAligned) {
-			storeUltrasonicDistances();
-			writeToLCD();
+	
+	//	while(isEnabled() && notAligned) {
+	//		storeUltrasonicDistances();
+	//		writeToLCD();
 			/*
 			if(System.currentTimeMillis() - startTime < 500) {
 				lift.set(LIFT_SPEED);
@@ -211,14 +212,19 @@ public class Robot extends SimpleRobot
 				lift.set(0);
 			}
 			*/
-			if(USE_MAX_BOTIX) {
-				autoAlignMaxBotix();
-			}else {
-				autoAlign();
-			}
+//			if(USE_MAX_BOTIX) {
+//				autoAlignMaxBotix();
+//			}else {
+//				autoAlign();
+//			}
+//		}
+	
+		
+		long timeStarted = System.currentTimeMillis();
+		while(System.currentTimeMillis() - timeStarted < 5500) {
+			drivetrain.setLeftRightMotorOutputs(-0.3, -0.42);
 		}
 		
-		drivetrain.setLeftRightMotorOutputs(0, 0);
 		
 		leftSolenoid.set(DoubleSolenoid.Value.kForward);
 	  rightSolenoid.set(DoubleSolenoid.Value.kForward);
@@ -228,6 +234,7 @@ public class Robot extends SimpleRobot
 		Timer.delay(1);
 		leftSolenoid.set(DoubleSolenoid.Value.kOff);
 		rightSolenoid.set(DoubleSolenoid.Value.kOff);
+		drivetrain.setLeftRightMotorOutputs(0, 0);
 				
 	}
 
@@ -336,7 +343,7 @@ public class Robot extends SimpleRobot
 			drivetrain.setLeftRightMotorOutputs(AUTO_ALIGN_MIN_SPEED, AUTO_ALIGN_MIN_SPEED);
 		}
 		else if (ultrasonicDistances[0] > SHOOTING_DISTANCE) {
-			drivetrain.setLeftRightMotorOutputs(-0.3, -0.3);
+			drivetrain.setLeftRightMotorOutputs(-0.3, -0.4);
 		}
 		
 		if(Math.abs(ultrasonicDistances[0] - SHOOTING_DISTANCE) < SHOOTING_DISTANCE_TOLERANCE) {
