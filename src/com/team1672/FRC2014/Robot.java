@@ -1,6 +1,6 @@
 /*
     SARCS - Semi-Automatic Robot Control System
-    v1.4 zeroquarter'
+    v1.5 'audiovision'
 
     This code is to be run on the cRIO.
 
@@ -22,13 +22,8 @@
 
 package com.team1672.FRC2014;
 
-/**
- * Gets the goodies.
- */
 import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.DriverStationLCD.Line;
@@ -54,10 +49,9 @@ public class Robot extends SimpleRobot
 	private boolean isCameraUp;
 	public final boolean USE_MAX_BOTIX = true;
 	
-	/**
-	 * Array of 2 or more distances obtained from ultrasonic sensors each loop, in inches.
-	 */
-	protected double[] ultrasonicDistances;
+	protected double leftSensorDistance;
+	protected double rightSensorDistance;
+	protected double centerSensorDistance;
 	
   /* Buttons */
   public final int FIRE_BUTTON = 1;
@@ -78,8 +72,8 @@ public class Robot extends SimpleRobot
 	public final double LIFT_SPEED = 0.40;
 	
 	// Other constants
-	public final int[] PING_CHANNELS = {1, 3};
-	public final int[] PONG_CHANNELS = {2, 4};
+	public final int[] PING_CHANNELS = {5, 7};
+	public final int[] PONG_CHANNELS = {6, 8};
 	public final double[] cameraAngle = {0.7, 0.85};
 
   /* PWM Channels controlling motors */
@@ -125,7 +119,7 @@ public class Robot extends SimpleRobot
 	private final Joystick leftStick, rightStick;
 	private final DriverStationLCD lcd;
   private final Ultrasonic leftSensor, rightSensor;
-	private final AnalogChannel maxBotix;
+	private final AnalogChannel centerSensor;
 	
 	//Really important automatic constants.
 	public final double SHOOTING_DISTANCE = 60; //in inches
@@ -146,9 +140,9 @@ public class Robot extends SimpleRobot
 	  isInverted = false;
 		lastFiredTime = 0L;
 		
-		ultrasonicDistances = new double[2];
-		ultrasonicDistances[0] = 0D;
-		ultrasonicDistances[1] = 0D;
+		leftSensorDistance = 0D;
+		rightSensorDistance = 0D;
+		centerSensorDistance = 0D;
 		
 		//Initialized automatic functionality variables
 		leftDriveSpeed = 0D;
@@ -164,7 +158,7 @@ public class Robot extends SimpleRobot
                                 kDrivetrain[3]);
 	  invertMotors();
 	  
-		maxBotix = new AnalogChannel(2);
+		
 		
 		//Sets up lift mechanism motor
     lift = new Jaguar(kLift);
@@ -187,9 +181,8 @@ public class Robot extends SimpleRobot
 
 		//Sets up ultrasonic sensors
     leftSensor = new Ultrasonic(PING_CHANNELS[0], PONG_CHANNELS[0]);
-		leftSensor.setEnabled(true);
     rightSensor = new Ultrasonic(PING_CHANNELS[1], PONG_CHANNELS[1]);
-		rightSensor.setEnabled(true);
+		centerSensor = new AnalogChannel(2);
 		
 		//Sets up Driver Station LCD (User Messages section)
 		lcd = DriverStationLCD.getInstance();
@@ -241,6 +234,8 @@ public class Robot extends SimpleRobot
 	public void operatorControl() 
 	{
 	  System.out.println("Now in driver mode.");
+		leftSensor.setAutomaticMode(true);
+		rightSensor.setAutomaticMode(true);
 		drivetrain.setSafetyEnabled(false);
 		lift.setSafetyEnabled(false);
 		
@@ -339,14 +334,14 @@ public class Robot extends SimpleRobot
 	
 	public void autoAlignMaxBotix() {
 		
-		if(ultrasonicDistances[0] < SHOOTING_DISTANCE) {
+		if(centerSensorDistance < SHOOTING_DISTANCE) {
 			drivetrain.setLeftRightMotorOutputs(AUTO_ALIGN_MIN_SPEED, AUTO_ALIGN_MIN_SPEED);
 		}
-		else if (ultrasonicDistances[0] > SHOOTING_DISTANCE) {
+		else if (centerSensorDistance > SHOOTING_DISTANCE) {
 			drivetrain.setLeftRightMotorOutputs(-0.3, -0.4);
 		}
 		
-		if(Math.abs(ultrasonicDistances[0] - SHOOTING_DISTANCE) < SHOOTING_DISTANCE_TOLERANCE) {
+		if(Math.abs(centerSensorDistance - SHOOTING_DISTANCE) < SHOOTING_DISTANCE_TOLERANCE) {
 			notAligned = false;
 		}
 	}
@@ -356,13 +351,13 @@ public class Robot extends SimpleRobot
 	 */
 	public void autoAlign() {
 		
-		double leftDistanceFromPerfect = Math.abs(ultrasonicDistances[0] - SHOOTING_DISTANCE);
-		double rightDistanceFromPerfect = Math.abs(ultrasonicDistances[1] - SHOOTING_DISTANCE);
+		double leftDistanceFromPerfect = Math.abs(leftSensorDistance - SHOOTING_DISTANCE);
+		double rightDistanceFromPerfect = Math.abs(rightSensorDistance - SHOOTING_DISTANCE);
 		
-		if(ultrasonicDistances[0] > SHOOTING_DISTANCE) {
+		if(leftSensorDistance > SHOOTING_DISTANCE) {
 			leftDriveSpeed = AUTO_ALIGN_MIN_SPEED;
 		}
-		else if(ultrasonicDistances[0] < SHOOTING_DISTANCE) {
+		else if(leftSensorDistance < SHOOTING_DISTANCE) {
 			leftDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
 		}
 		else {
@@ -370,10 +365,10 @@ public class Robot extends SimpleRobot
 			leftDriveSpeed = 0;
 		}
 		
-		if(ultrasonicDistances[1] > SHOOTING_DISTANCE) {
+		if(rightSensorDistance > SHOOTING_DISTANCE) {
 			rightDriveSpeed = AUTO_ALIGN_MIN_SPEED;
 		}
-		else if(ultrasonicDistances[1] < SHOOTING_DISTANCE) {
+		else if(rightSensorDistance < SHOOTING_DISTANCE) {
 			rightDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
 		}
 		else {
@@ -397,13 +392,9 @@ public class Robot extends SimpleRobot
 	}
 	
 	public void storeUltrasonicDistances() {
-		if(USE_MAX_BOTIX) {
-			ultrasonicDistances[0] = getMaxBotixInches();
-			ultrasonicDistances[1] = 0;
-		} else {
-			ultrasonicDistances[0] = leftSensor.getRangeInches();
-			ultrasonicDistances[1] = rightSensor.getRangeInches();
-		}
+		leftSensorDistance = leftSensor.getRangeInches();
+		rightSensorDistance = rightSensor.getRangeInches();
+		centerSensorDistance = (centerSensor.getValue() - 0.2916666666) / 1.851190476D;
 	}
 	
 	/**
@@ -415,15 +406,11 @@ public class Robot extends SimpleRobot
 	{
 		lastReverseTime = System.currentTimeMillis();
 		isInverted = !isInverted;
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++) {
 			drivetrain.setInvertedMotor(motors[i], isInverted);
+		}
 	}
 	
-	public double getMaxBotixInches() {
-			int reading = maxBotix.getValue();
-			System.out.println("Voltage: " + maxBotix.getVoltage() + "\n Reading: " + reading);
-			return  (reading - 0.2916666666) / 1.851190476D;
-	}
 	/**
 	 * Toggles the angle of the axis camera. The camera can either be up or down.
 	 */
@@ -444,16 +431,16 @@ public class Robot extends SimpleRobot
 	 */
 	private void writeToLCD()
 	{
-		lcd.println(Line.kUser1, 1, "Hi Neil! C: SARCS 1.3");
+		lcd.println(Line.kUser1, 1, "Hi Neil! :3 SARCS 1.5");
 		lcd.println(Line.kUser2, 1, (isInverted) ? "M:Inverted F:Shooter" 
 																						 : "M:Normal   F:Pick-up");
 		lcd.println(Line.kUser3, 1, (isCameraUp) ? "Camera:Up View:Field"
 																						 : "Camera:Dwn View:Arm");
-		double left = Math.floor(ultrasonicDistances[0] * 1000) / 1000D;
-		double right = Math.floor(ultrasonicDistances[1] * 1000) / 1000D;
-		double average = Math.floor(((left + right) / 2D) * 1000) / 1000D;
-		lcd.println(Line.kUser4, 1, "LS: " + left + "   RS: " + right);
-		lcd.println(Line.kUser5, 1, "Average: " + average);
+		double leftDistanceTruncated = Math.floor(leftSensorDistance * 100D) / 100D;
+		double rightDistanceTruncated = Math.floor(rightSensorDistance * 100D) / 100D;
+		double centerDistanceTruncated = Math.floor(centerSensorDistance * 100D) / 100D;
+		lcd.println(Line.kUser4, 1, "L: " + leftDistanceTruncated + "   R: " + rightDistanceTruncated);
+		lcd.println(Line.kUser5, 1, "Center: " + centerDistanceTruncated);
 		lcd.println(Line.kUser6, 1, "http://team1672.com");
 						
 		lcd.updateLCD();
