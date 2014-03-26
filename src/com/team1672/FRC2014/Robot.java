@@ -47,7 +47,6 @@ public class Robot extends SimpleRobot
   private boolean isCompressorOn;
   private boolean isInverted;
 	private boolean isCameraUp;
-	public final boolean USE_MAX_BOTIX = true;
 	
 	protected double leftSensorDistance;
 	protected double rightSensorDistance;
@@ -125,8 +124,20 @@ public class Robot extends SimpleRobot
 	public final double SHOOTING_DISTANCE = 60; //in inches
 	public final double SHOOTING_DISTANCE_TOLERANCE = 0.5; //in inches
 	public final double AUTO_ALIGN_MIN_SPEED = 0.15; //from -1 to 1
-	public final double SLOW_SPEED = 0.15;
 	public final double AUTONOMOUS_MODE_SPEED = 0.5; //from -1 to 1
+	
+	public final double FAST_AUTO_SPEED = 0.8;
+	public final double MEDIUM_FAST_AUTO_SPEED = 0.5;
+	public final double MEDIUM_AUTO_SPEED = 0.4;
+	public final double MEDIUM_SLOW_AUTO_SPEED = 0.3;
+	public final double SLOW_AUTO_SPEED = 0.2;
+	public final double CRAWL_AUTO_SPEED = 0.15;
+	
+	public final double FAST_PROXIMITY = 150;
+	public final double MEDIUM_FAST_PROXIMITY = 120;
+	public final double MEDIUM_PROXIMITY = 100;
+	public final double MEDIUM_SLOW_PROXIMITY = 80;
+	public final double SLOW_PROXIMITY = 65;
 	
   public Robot()
 	{
@@ -193,11 +204,12 @@ public class Robot extends SimpleRobot
 		System.out.println("Now in auto mode.");
 		notAligned = true;
 		storeUltrasonicDistances();
-		//long startTime = System.currentTimeMillis();
 	
-	//	while(isEnabled() && notAligned) {
-	//		storeUltrasonicDistances();
-	//		writeToLCD();
+		while(isEnabled() && notAligned) {
+			storeUltrasonicDistances();
+			writeToLCD();
+			autoAlign();
+			
 			/*
 			if(System.currentTimeMillis() - startTime < 500) {
 				lift.set(LIFT_SPEED);
@@ -211,16 +223,10 @@ public class Robot extends SimpleRobot
 //				autoAlign();
 //			}
 //		}
-	
-		
-		long timeStarted = System.currentTimeMillis();
-		while(System.currentTimeMillis() - timeStarted < 5500) {
-			drivetrain.setLeftRightMotorOutputs(-0.3, -0.42);
 		}
 		
-		
 		leftSolenoid.set(DoubleSolenoid.Value.kForward);
-	  rightSolenoid.set(DoubleSolenoid.Value.kForward);
+		rightSolenoid.set(DoubleSolenoid.Value.kForward);
 		Timer.delay(1);
 		leftSolenoid.set(DoubleSolenoid.Value.kReverse);
 		rightSolenoid.set(DoubleSolenoid.Value.kReverse);
@@ -228,6 +234,16 @@ public class Robot extends SimpleRobot
 		leftSolenoid.set(DoubleSolenoid.Value.kOff);
 		rightSolenoid.set(DoubleSolenoid.Value.kOff);
 		drivetrain.setLeftRightMotorOutputs(0, 0);
+		
+		/*
+		long timeStarted = System.currentTimeMillis();
+		while(System.currentTimeMillis() - timeStarted < 5500) {
+			drivetrain.setLeftRightMotorOutputs(-0.3, -0.42);
+		}
+		*/
+		
+		
+		
 				
 	}
 
@@ -252,15 +268,11 @@ public class Robot extends SimpleRobot
 			
 			//Automatic alignment control
 			if(leftStick.getRawButton(AUTO_ALIGN_BUTTON) && notAligned == true) {
-				if(USE_MAX_BOTIX) {
-					autoAlignMaxBotix();
-				} else {
 					autoAlign();
-				}
 			} else if(leftStick.getRawButton(SLOW_BUTTON)				) {
-					drivetrain.setLeftRightMotorOutputs(-SLOW_SPEED, -SLOW_SPEED);
+					drivetrain.setLeftRightMotorOutputs(-CRAWL_AUTO_SPEED, -CRAWL_AUTO_SPEED);
 			} else if(leftStick.getRawButton(SLOW_BUTTON_2)) {
-					drivetrain.setLeftRightMotorOutputs(SLOW_SPEED, SLOW_SPEED);
+					drivetrain.setLeftRightMotorOutputs(CRAWL_AUTO_SPEED, CRAWL_AUTO_SPEED);
 			} else {
 					drivetrain.tankDrive(leftStick, rightStick);
 					notAligned = true;
@@ -354,27 +366,44 @@ public class Robot extends SimpleRobot
 		double leftDistanceFromPerfect = Math.abs(leftSensorDistance - SHOOTING_DISTANCE);
 		double rightDistanceFromPerfect = Math.abs(rightSensorDistance - SHOOTING_DISTANCE);
 		
-		if(leftSensorDistance > SHOOTING_DISTANCE) {
-			leftDriveSpeed = AUTO_ALIGN_MIN_SPEED;
-		}
-		else if(leftSensorDistance < SHOOTING_DISTANCE) {
+		if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > FAST_PROXIMITY) {
+			leftDriveSpeed = FAST_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > MEDIUM_FAST_PROXIMITY) {
+			leftDriveSpeed = MEDIUM_FAST_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > MEDIUM_PROXIMITY) {
+			leftDriveSpeed = MEDIUM_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > MEDIUM_SLOW_PROXIMITY) {
+			leftDriveSpeed = MEDIUM_SLOW_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > SLOW_PROXIMITY) {
+			leftDriveSpeed = SLOW_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE) {
+			leftDriveSpeed = CRAWL_AUTO_SPEED;
+		} else if(leftSensorDistance < SHOOTING_DISTANCE) {
 			leftDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
-		}
-		else {
+		} else {
 			System.out.println("There was a problem auto-aligning! (1)");
 			leftDriveSpeed = 0;
 		}
 		
-		if(rightSensorDistance > SHOOTING_DISTANCE) {
-			rightDriveSpeed = AUTO_ALIGN_MIN_SPEED;
-		}
-		else if(rightSensorDistance < SHOOTING_DISTANCE) {
+		if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > FAST_PROXIMITY) {
+			rightDriveSpeed = FAST_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > MEDIUM_FAST_PROXIMITY) {
+			rightDriveSpeed = MEDIUM_FAST_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > MEDIUM_PROXIMITY) {
+			rightDriveSpeed = MEDIUM_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > MEDIUM_SLOW_PROXIMITY) {
+			rightDriveSpeed = MEDIUM_SLOW_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > SLOW_PROXIMITY) {
+			rightDriveSpeed = SLOW_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE) {
+			rightDriveSpeed = CRAWL_AUTO_SPEED;
+		} else if(rightSensorDistance < SHOOTING_DISTANCE) {
 			rightDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
-		}
-		else {
+		} else {
 			System.out.println("There was a problem auto-aligning! (2)");
 			rightDriveSpeed = 0;
 		}
+		
 		
 		if(leftDistanceFromPerfect < SHOOTING_DISTANCE_TOLERANCE) {
 			leftDriveSpeed = 0;
