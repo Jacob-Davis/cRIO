@@ -267,7 +267,7 @@ public class Robot extends SimpleRobot
 			lift.set(LIFT_SPEED);
 			Timer.delay(0.25);
 			lift.set(0);
-			Timer.delay(0.8);
+			Timer.delay(3.5);
 		
 			leftSolenoid.set(DoubleSolenoid.Value.kForward);
 			rightSolenoid.set(DoubleSolenoid.Value.kForward);
@@ -364,8 +364,6 @@ public class Robot extends SimpleRobot
 				leftSolenoid.set(DoubleSolenoid.Value.kOff);
 				rightSolenoid.set(DoubleSolenoid.Value.kOff);
 			}
-			
-			
 		
 			//Camera control (up/down toggle)
 			if(leftStick.getRawButton(CAMERA_TOGGLE) && (System.currentTimeMillis() - lastAngleTime) >= 500) 
