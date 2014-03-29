@@ -1,6 +1,6 @@
 /*
     SARCS - Semi-Automatic Robot Control System
-    v1.5 'audiovision'
+    v1.6 'teleview'
 
     This code is to be run on the cRIO.
 
@@ -122,11 +122,27 @@ public class Robot extends SimpleRobot
 	private final AnalogChannel centerSensor;
 	
 	//Really important automatic constants.
-	public final double SHOOTING_DISTANCE = 60; //in inches
-	public final double SHOOTING_DISTANCE_TOLERANCE = 0.5; //in inches
+	public final double SHOOTING_DISTANCE = 108; //in inches
+	public final double SHOOTING_DISTANCE_TOLERANCE = 2; //in inches
 	public final double AUTO_ALIGN_MIN_SPEED = 0.15; //from -1 to 1
 	public final double SLOW_SPEED = 0.15;
 	public final double AUTONOMOUS_MODE_SPEED = 0.5; //from -1 to 1
+	
+	//Really important automatic constants.
+	public final double FAST_AUTO_SPEED = 0.8;
+	public final double MEDIUM_FAST_AUTO_SPEED = 0.5;
+	public final double MEDIUM_AUTO_SPEED = 0.4;
+	public final double MEDIUM_SLOW_AUTO_SPEED = 0.3;
+	public final double SLOW_AUTO_SPEED = 0.2;
+	public final double CRAWL_AUTO_SPEED = 0.15;
+	
+	public final double FAST_PROXIMITY = 150;
+	public final double MEDIUM_FAST_PROXIMITY = 120;
+	public final double MEDIUM_PROXIMITY = 100;
+	public final double MEDIUM_SLOW_PROXIMITY = 80;
+	public final double SLOW_PROXIMITY = 65;
+	
+	public final boolean USE_SENSORS_IN_AUTO_MODE = false;
 	
   public Robot()
 	{
@@ -140,9 +156,9 @@ public class Robot extends SimpleRobot
 	  isInverted = false;
 		lastFiredTime = 0L;
 		
-		leftSensorDistance = 0D;
-		rightSensorDistance = 0D;
-		centerSensorDistance = 0D;
+		leftSensorDistance = 250D;
+		rightSensorDistance = 250D;
+		centerSensorDistance = 250D;
 		
 		//Initialized automatic functionality variables
 		leftDriveSpeed = 0D;
@@ -191,44 +207,87 @@ public class Robot extends SimpleRobot
 	public void autonomous() 
 	{
 		System.out.println("Now in auto mode.");
+
 		notAligned = true;
+		leftSensor.setAutomaticMode(true);
+		rightSensor.setAutomaticMode(true);
+		leftSensorDistance = 250D;
+		rightSensorDistance = 250D;
 		storeUltrasonicDistances();
-		//long startTime = System.currentTimeMillis();
-	
-	//	while(isEnabled() && notAligned) {
-	//		storeUltrasonicDistances();
-	//		writeToLCD();
-			/*
-			if(System.currentTimeMillis() - startTime < 500) {
-				lift.set(LIFT_SPEED);
-			} else {
-				lift.set(0);
-			}
-			*/
-//			if(USE_MAX_BOTIX) {
-//				autoAlignMaxBotix();
-//			}else {
-//				autoAlign();
-//			}
-//		}
-	
 		
-		long timeStarted = System.currentTimeMillis();
-		while(System.currentTimeMillis() - timeStarted < 5500) {
-			drivetrain.setLeftRightMotorOutputs(-0.3, -0.42);
-		}
-		
-		
-		leftSolenoid.set(DoubleSolenoid.Value.kForward);
-	  rightSolenoid.set(DoubleSolenoid.Value.kForward);
-		Timer.delay(1);
-		leftSolenoid.set(DoubleSolenoid.Value.kReverse);
-		rightSolenoid.set(DoubleSolenoid.Value.kReverse);
-		Timer.delay(1);
-		leftSolenoid.set(DoubleSolenoid.Value.kOff);
-		rightSolenoid.set(DoubleSolenoid.Value.kOff);
-		drivetrain.setLeftRightMotorOutputs(0, 0);
+		if(USE_SENSORS_IN_AUTO_MODE) {
+			
+			while(isEnabled() && isAutonomous() && notAligned) {
+				leftSensor.setAutomaticMode(true);
+				rightSensor.setAutomaticMode(true);
+				storeUltrasonicDistances();
+				writeToLCD();
+				autoAlign();
+			
+				if(leftSensorDistance < (SHOOTING_DISTANCE - 10) ||  rightSensorDistance < (SHOOTING_DISTANCE - 10)) {
+					return;
+				}
 				
+				drivetrain.setLeftRightMotorOutputs(0, 0);
+				Timer.delay(1.5);
+		
+				leftSolenoid.set(DoubleSolenoid.Value.kForward);
+				rightSolenoid.set(DoubleSolenoid.Value.kForward);
+				Timer.delay(1);
+				leftSolenoid.set(DoubleSolenoid.Value.kReverse);
+				rightSolenoid.set(DoubleSolenoid.Value.kReverse);
+				Timer.delay(1);
+				leftSolenoid.set(DoubleSolenoid.Value.kOff);
+				rightSolenoid.set(DoubleSolenoid.Value.kOff);
+
+				System.out.println("Fired with sensors - L: " + leftSensorDistance + "\"");
+				System.out.println("Fired with sensors - C: " + centerSensorDistance + "\"");
+				System.out.println("Fired with sensors - R: " + rightSensorDistance + "\"");
+				storeUltrasonicDistances();
+				System.out.println("After firing with sensors - L: " + leftSensorDistance + "\"");
+				System.out.println("After firing with sensors - C: " + centerSensorDistance + "\"");
+				System.out.println("After firing with sensors - R: " + rightSensorDistance + "\"");
+				
+			}
+			
+		} else {
+			
+			
+			
+			long timeStarted = System.currentTimeMillis();
+			
+			while(System.currentTimeMillis() - timeStarted < 2800) {
+				drivetrain.setLeftRightMotorOutputs(-0.3, -0.3);
+				storeUltrasonicDistances();
+				System.out.println("L: " + leftSensorDistance + "\", R: " + rightSensorDistance + "\"");
+			}
+			
+			drivetrain.setLeftRightMotorOutputs(0, 0);
+			Timer.delay(0.5);
+			lift.set(LIFT_SPEED);
+			Timer.delay(0.25);
+			lift.set(0);
+			Timer.delay(0.8);
+		
+			leftSolenoid.set(DoubleSolenoid.Value.kForward);
+			rightSolenoid.set(DoubleSolenoid.Value.kForward);
+			Timer.delay(1);
+			leftSolenoid.set(DoubleSolenoid.Value.kReverse);
+			rightSolenoid.set(DoubleSolenoid.Value.kReverse);
+			Timer.delay(1);
+			leftSolenoid.set(DoubleSolenoid.Value.kOff);
+			rightSolenoid.set(DoubleSolenoid.Value.kOff);
+		
+			System.out.println("Fired using time - L: " + leftSensorDistance + "\"");
+			System.out.println("Fired using time - C: " + centerSensorDistance + "\"");
+			System.out.println("Fired using time - R: " + rightSensorDistance + "\"");
+			storeUltrasonicDistances();
+			System.out.println("After firing using time - L: " + leftSensorDistance + "\"");
+			System.out.println("After firing using time - C: " + centerSensorDistance + "\"");
+			System.out.println("After firing using time - R: " + rightSensorDistance + "\"");
+			
+		}
+			
 	}
 
 	public void operatorControl() 
@@ -239,7 +298,8 @@ public class Robot extends SimpleRobot
 		drivetrain.setSafetyEnabled(false);
 		lift.setSafetyEnabled(false);
 		
-		
+		leftSensorDistance = 250D;
+		rightSensorDistance = 250D;
 		
 		//Initial solenoid maintenance
 		leftSolenoid.set(DoubleSolenoid.Value.kOff);
@@ -247,8 +307,10 @@ public class Robot extends SimpleRobot
 	
 		while(this.isOperatorControl() && this.isEnabled()) 
 		{
-				
+			leftSensor.setAutomaticMode(true);
+			rightSensor.setAutomaticMode(true);
 			storeUltrasonicDistances();
+			System.out.println("L: " + leftSensorDistance + " C: " + centerSensorDistance + " R: " + rightSensorDistance);
 			
 			//Automatic alignment control
 			if(leftStick.getRawButton(AUTO_ALIGN_BUTTON) && notAligned == true) {
@@ -354,27 +416,44 @@ public class Robot extends SimpleRobot
 		double leftDistanceFromPerfect = Math.abs(leftSensorDistance - SHOOTING_DISTANCE);
 		double rightDistanceFromPerfect = Math.abs(rightSensorDistance - SHOOTING_DISTANCE);
 		
-		if(leftSensorDistance > SHOOTING_DISTANCE) {
+		if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > FAST_PROXIMITY) {
+			leftDriveSpeed = -FAST_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > MEDIUM_FAST_PROXIMITY) {
+			leftDriveSpeed = -MEDIUM_FAST_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > MEDIUM_PROXIMITY) {
+			leftDriveSpeed = -MEDIUM_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > MEDIUM_SLOW_PROXIMITY) {
+			leftDriveSpeed = -MEDIUM_SLOW_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE && leftSensorDistance > SLOW_PROXIMITY) {
+			leftDriveSpeed = -SLOW_AUTO_SPEED;
+		} else if(leftSensorDistance > SHOOTING_DISTANCE) {
+			leftDriveSpeed = -CRAWL_AUTO_SPEED;
+		} else if(leftSensorDistance < SHOOTING_DISTANCE) {
 			leftDriveSpeed = AUTO_ALIGN_MIN_SPEED;
-		}
-		else if(leftSensorDistance < SHOOTING_DISTANCE) {
-			leftDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
-		}
-		else {
-			System.out.println("There was a problem auto-aligning! (1)");
+		} else {
+			System.out.println("There was a problem auto-aligning! (Or it was perfect... not likely) (1)");
 			leftDriveSpeed = 0;
 		}
 		
-		if(rightSensorDistance > SHOOTING_DISTANCE) {
+		if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > FAST_PROXIMITY) {
+			rightDriveSpeed = -FAST_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > MEDIUM_FAST_PROXIMITY) {
+			rightDriveSpeed = -MEDIUM_FAST_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > MEDIUM_PROXIMITY) {
+			rightDriveSpeed = -MEDIUM_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > MEDIUM_SLOW_PROXIMITY) {
+			rightDriveSpeed = -MEDIUM_SLOW_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE && rightSensorDistance > SLOW_PROXIMITY) {
+			rightDriveSpeed = -SLOW_AUTO_SPEED;
+		} else if(rightSensorDistance > SHOOTING_DISTANCE) {
+			rightDriveSpeed = -CRAWL_AUTO_SPEED;
+		} else if(rightSensorDistance < SHOOTING_DISTANCE) {
 			rightDriveSpeed = AUTO_ALIGN_MIN_SPEED;
-		}
-		else if(rightSensorDistance < SHOOTING_DISTANCE) {
-			rightDriveSpeed = -AUTO_ALIGN_MIN_SPEED;
-		}
-		else {
-			System.out.println("There was a problem auto-aligning! (2)");
+		} else {
+			System.out.println("There was a problem auto-aligning! (Or it was perfect... not likely) (2)");
 			rightDriveSpeed = 0;
 		}
+		
 		
 		if(leftDistanceFromPerfect < SHOOTING_DISTANCE_TOLERANCE) {
 			leftDriveSpeed = 0;
@@ -392,9 +471,17 @@ public class Robot extends SimpleRobot
 	}
 	
 	public void storeUltrasonicDistances() {
-		leftSensorDistance = leftSensor.getRangeInches();
-		rightSensorDistance = rightSensor.getRangeInches();
+		double leftSensorTemp = leftSensor.getRangeInches();
+		double rightSensorTemp = rightSensor.getRangeInches();
 		centerSensorDistance = (centerSensor.getValue() - 0.2916666666) / 1.851190476D;
+		
+		if(leftSensorTemp < 230 && leftSensorTemp > 5) {
+			leftSensorDistance = leftSensorTemp;
+		}
+		
+		if(rightSensorTemp < 230 && leftSensorTemp > 5) {
+			rightSensorDistance = rightSensorTemp;
+		}
 	}
 	
 	/**

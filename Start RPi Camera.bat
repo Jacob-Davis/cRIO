@@ -1,0 +1,1 @@
+plink -ssh frc1672@10.16.72.15 -pw team1672 -m C:\Users\Driver\camera\start-camera
