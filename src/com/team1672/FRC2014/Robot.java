@@ -251,9 +251,6 @@ public class Robot extends SimpleRobot
 			}
 			
 		} else {
-			
-			
-			
 			long timeStarted = System.currentTimeMillis();
 			
 			while(System.currentTimeMillis() - timeStarted < 2800) {
@@ -265,10 +262,10 @@ public class Robot extends SimpleRobot
 			drivetrain.setLeftRightMotorOutputs(0, 0);
 			Timer.delay(0.5);
 			lift.set(LIFT_SPEED);
-			Timer.delay(0.25);
+			Timer.delay(0.20);
 			lift.set(0);
 			Timer.delay(3.5);
-		
+			
 			leftSolenoid.set(DoubleSolenoid.Value.kForward);
 			rightSolenoid.set(DoubleSolenoid.Value.kForward);
 			Timer.delay(1);
